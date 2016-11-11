@@ -1,0 +1,7 @@
+training details:
+Number of Users: 18578352 (node ids 1-18578352)
+Number of Boards: 9195012 (node ids 18578353-27773364)
+Number of Distinct Pins: 10315056 (node ids 27772265-28088420)
+Number of Follows = 25477940
+Number of Pin Placements: 337027895
+Number of Pins Placements on Boards that Have Not Yet Been Created: 3698626
