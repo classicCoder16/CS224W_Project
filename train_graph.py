@@ -3,7 +3,7 @@ import datetime
 import sys
 import pickle 
 
-class Pinterest_Graph:
+class Train_Graph:
 
 
 	def __init__(self, year_lbound, year_ubound, src_path, graph_file=None):
@@ -90,9 +90,8 @@ class Pinterest_Graph:
 		f = open(self.src_path + "boards.tsv")
 		# Start adding node ids beginning with
 		# this index
-		index = len(self.mapping)
-		counter = 1
-		for line in f:
+		index = self.user_node_ids[1]
+		for i, line in enumerate(f):
 
 			# Split by tab since description/name 
 			# may have spaces
@@ -110,7 +109,7 @@ class Pinterest_Graph:
 			board_year = datetime.datetime.fromtimestamp(int(time)).year
 			if board_year < self.year_lbound or board_year > self.year_ubound: continue
 
-			new_board_id = index + counter
+			new_board_id = index + (i + 1)
 			new_user_id = self.mapping['u' + user_id]
 
 			# Map the node id to its attributes
@@ -119,16 +118,15 @@ class Pinterest_Graph:
 			self.attributes[(new_board_id, new_user_id)] = {'create_time': time}
 
 			# Add edge to user that created the board
-			self.pgraph.AddNode(index + counter)
+			self.pgraph.AddNode(new_board_id)
 			self.pgraph.AddEdge(new_board_id, new_user_id)
 
 			# Map given board id to our counter id
 			self.mapping['b'+board_id] = new_board_id
-			counter += 1
 		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
-		self.board_node_ids = (self.user_node_ids[1] + 1, self.pgraph.GetNodes())
+		self.board_node_ids = (self.user_node_ids[1] + 1, self.user_node_ids[1] + (i + 1))
 
 
 	def read_follows(self):
@@ -157,10 +155,9 @@ class Pinterest_Graph:
 	def read_pins(self):
 		print "reading pins"
 		f = open(self.src_path + "pins.tsv")
-		index = len(self.mapping)
-		counter = 1
-		#bad_pin_counts = 0
-		#bad_pins = []
+		index = self.board_node_ids[1]
+		counter = 0
+		seen_before = set()
 		# For every line in file
 		for line in f:
 
@@ -168,40 +165,31 @@ class Pinterest_Graph:
 			pins_info = line.split('\t')
 			time, board_id, pin_id = pins_info
 			pin_id = str(int(pin_id))
-
+			if pin_id not in seen_before:
+				seen_before.add(pin_id)
+				counter += 1
 			# Get year from unix timestamp
 			pin_year = datetime.datetime.fromtimestamp(int(time)).year
+			# Ignore pins outside of valid range
 			if pin_year < self.year_lbound or pin_year > self.year_ubound: continue
-			if'b'+board_id not in self.mapping:
-				print pin_year
-				#bad_pins.append(time + " " + board_id + " " + pin_id + " " + str(pin_year)) 
-				#bad_pin_counts += 1
-				continue
-			nid = index + counter
-			# If we haven't seen this pin_id before
-			if 'p' + pin_id not in self.mapping:
-				self.mapping['p'+pin_id] = nid
-				# Add the pin node to the graph.
-				self.pgraph.AddNode(nid)
-				counter += 1
-			self.pgraph.AddEdge(nid, self.mapping['b'+board_id])
-			self.attributes[(self.mapping['b'+board_id], nid)] = {'pin_time': time}
+			# Ignore if board does not exist
+			if'b'+board_id not in self.mapping: continue
+			pid = index + counter
+			bid = self.mapping['b'+board_id]
+			# Add the pin node to the graph.
+			if not self.pgraph.IsNode(pid): self.pgraph.AddNode(pid)
+			self.pgraph.AddEdge(pid, bid)
+			self.attributes[(bid, pid)] = {'pin_time': time}
 		f.close()
 
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
-		self.pin_node_ids = (self.board_node_ids[1] + 1, self.pgraph.GetNodes())
-		'''
-		print bad_pin_counts
-		f = open("bad_pins.txt", "w")
-		for p in bad_pins:
-			f.write(p)
-		f.close()
-		'''
+		self.pin_node_ids = (self.board_node_ids[1] + 1, self.board_node_ids[1] + counter)
+
 
 if __name__ == '__main__':
 	src_path = sys.argv[1]
-	pgraph_obj = Pinterest_Graph(2010, 2013, src_path)
+	pgraph_obj = Train_Graph(2010, 2013, src_path)
 	pgraph = pgraph_obj.get_graph()
 	pgraph_obj.write_to_file('train')
 	print 'Done!'
