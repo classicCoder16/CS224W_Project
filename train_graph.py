@@ -204,7 +204,7 @@ if __name__ == '__main__':
 	src_path = sys.argv[1]
 	pgraph_obj = Train_Graph(2013, 2013, src_path)
 	pgraph = pgraph_obj.get_graph()
-	pgraph_obj.write_to_file('train')
+	pgraph_obj.write_to_file(sys.argv[2])
 	print 'Done!'
 	print str(pgraph.GetNodes()) + ' Nodes'
 	print str(pgraph.GetEdges()) + ' Edges'
