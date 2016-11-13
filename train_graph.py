@@ -146,6 +146,8 @@ class Train_Graph:
 			# Ignore invalid years
 			if follow_year < self.year_lbound or follow_year > self.year_ubound: continue
 
+			if not self.pgraph.IsNode(user_id) or not self.pgraph.IsNode(board_id): continue
+
 			# Try adding edge; if exists, don't add attribute
 			ret_val  = self.pgraph.AddEdge(user_id, board_id)
 			if ret_val != -2:
@@ -200,7 +202,7 @@ class Train_Graph:
 
 if __name__ == '__main__':
 	src_path = sys.argv[1]
-	pgraph_obj = Train_Graph(2010, 2013, src_path)
+	pgraph_obj = Train_Graph(2013, 2013, src_path)
 	pgraph = pgraph_obj.get_graph()
 	pgraph_obj.write_to_file('train')
 	print 'Done!'
