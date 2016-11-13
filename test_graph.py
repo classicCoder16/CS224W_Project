@@ -8,8 +8,6 @@ class Test_Graph:
 
 	def __init__(self, year_lbound, year_ubound, node_file_root, src_path, graph_file_root=None):
 		self.pgraph = snap.TUNGraph.New()
-		# Maps given board/user/pin ids to a counter value
-		self.mapping = {}
 		# Maps the counter value to node attributes
 		self.attributes = {}
 		# Path to read the files from
@@ -79,94 +77,66 @@ class Test_Graph:
 			if isinstance(key, tuple):
 				self.attributes.pop(key, None)
 
-	def read_users(self):
-		print "reading users"
-		f = open(self.src_path + "users.tsv")
-		# For every line
-		for i, line in enumerate(f):
-			user_id = 'u'+line.split()[0]
-			# Map the given user id to this counter
-			self.mapping[user_id] = i+1
-		f.close()
-
-	def read_boards(self):
-		print "reading boards"
-		f = open(self.src_path + "boards.tsv")
-		# Start adding node ids beginning with
-		# this index
-		index = self.user_node_ids[1]
-		for i, line in enumerate(f):
-
-			# Split by tab since description/name 
-			# may have spaces
-			board_info = line.split('\t')
-			board_id = board_info[0]
-
-			new_board_id = index + (i + 1)
-			if not self.pgraph.IsNode(new_board_id): continue
-
-			# Map given board id to our counter id
-			self.mapping['b'+board_id] = new_board_id
-		f.close()
 
 	def read_follows(self):
-		print "reading follows"
+		print "Reading follows..."
 		f = open(self.src_path + "follow.tsv")
-		for i, line in enumerate(f):
+		for line in f:
 			follow_info = line.split('\t')
 			# Break line into components
 			board_id, user_id, time = follow_info
+			board_id = self.get_mapped_board_id(int(board_id))
+			user_id = int(user_id)
+
 			# Year is first four characters of time
 			follow_year = int(time[0:4])
 			# Ignore invalid years
 			if follow_year < self.year_lbound or follow_year > self.year_ubound: continue
-			mapped_user_id = self.mapping['u'+user_id]
-			mapped_board_id = self.mapping['b'+board_id]
+			
 			# Ignore current edge if neither node is in the training set
-			if not self.pgraph.IsNode(mapped_user_id) or not self.pgrapg.IsNode(mapped_board_id):
+			if not self.pgraph.IsNode(user_id) or not self.pgrapg.IsNode(board_id):
 				continue
 
-			# Try adding edge; if exists, don't add attribute
-			ret_val  = self.pgraph.AddEdge(mapped_user_id, mapped_board_id)
-			self.attributes[(mapped_board_id, mapped_user_id)] = {'follow_time': time}
+			ret_val  = self.pgraph.AddEdge(user_id, board_id)
+			self.attributes[(board_id, user_id)] = {'follow_time': time}
 		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
 
 
 	def read_pins(self):
-		print "reading pins"
+		print "Reading pins..."
 		f = open(self.src_path + "pins.tsv")
-		index = self.board_node_ids[1]
-		counter = 0
-		seen_before = set()
 		# For every line in file
 		for line in f:
 
 			# Split into attributes
 			pins_info = line.split('\t')
 			time, board_id, pin_id = pins_info
-			pin_id = str(int(pin_id))
-			# Advance counter if a new pin id
-			if pin_id not in seen_before:
-				seen_before.add(pin_id)
-				counter += 1
+			pin_id = get_mapped_pin_id(int(pin_id))
+			board_id = get_mapped_board_id(int(board_id))
+
 			# Get year from unix timestamp
 			pin_year = datetime.datetime.fromtimestamp(int(time)).year
 			# Ignore pins outside of valid range
 			if pin_year < self.year_lbound or pin_year > self.year_ubound: continue
-			# Ignore if pin or board are not existing nodes
-			pid = index + counter
-			if not self.pgraph.IsNode(pid) or 'b'+board_id not in self.mapping: continue
+
+			if not self.pgraph.IsNode(pin_id) or \
+			 not self.pgraph.IsNode(board_id): continue
 			
-			bid = self.mapping['b'+board_id]
 			# Add the new edge to the graph.
-			self.pgraph.AddEdge(pid, bid)
-			self.attributes[(bid, pid)] = {'pin_time': time}
+			self.pgraph.AddEdge(pin_id, board_id)
+			self.attributes[(board_id, pin_id)] = {'pin_time': time}
 		f.close()
 
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
+
+	def get_mapped_board_id(self, board_id):
+		return int(board_id) + self.user_node_ids[1] + 1
+
+	def get_mapped_pin_id(self, pin_id):
+		return int(pin_id) + self.board_node_ids[1] + 1
 
 if __name__ == '__main__':
 	src_path = sys.argv[1]

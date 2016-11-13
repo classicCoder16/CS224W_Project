@@ -9,7 +9,7 @@ class Train_Graph:
 	def __init__(self, year_lbound, year_ubound, src_path, graph_file=None):
 		self.pgraph = snap.TUNGraph.New()
 		# Maps given board/user/pin ids to a counter value
-		self.mapping = {}
+		# self.mapping = {}
 		# Maps the counter value to node attributes
 		self.attributes = {}
 		# Path to read the files from
@@ -71,27 +71,26 @@ class Train_Graph:
 		self.read_pins()
 
 	def read_users(self):
-		print "reading users"
+		print "Reading users..."
 		f = open(self.src_path + "users.tsv")
 		# For every line
-		for i, line in enumerate(f):
-			user_id = 'u'+line.split()[0]
-			# Add 1 since i starts at 0
-			self.pgraph.AddNode(i+1)
-			# Map the given user id to this counter
-			self.mapping[user_id] = i+1
+		max_user_id = 0
+		for line in f:
+			user_id = int(line.split()[0])
+			if user_id > max_user_id: max_user_id = user_id
+			self.pgraph.AddNode(user_id)
 		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
-		self.user_node_ids = (1, self.pgraph.GetNodes())
+		self.user_node_ids = (0, max_user_id)
+		print 'Range:', self.user_node_ids
 
 	def read_boards(self):
-		print "reading boards"
+		print "Reading boards..."
 		f = open(self.src_path + "boards.tsv")
-		# Start adding node ids beginning with
-		# this index
-		index = self.user_node_ids[1]
-		for i, line in enumerate(f):
+
+		max_board_id = 0
+		for line in f:
 
 			# Split by tab since description/name 
 			# may have spaces
@@ -105,87 +104,99 @@ class Train_Graph:
 			else:
 				board_id, board_name, description, user_id, time = board_info
 
+			board_id = self.get_mapped_board_id(int(board_id))
+			if board_id > max_board_id: max_board_id = board_id
+
 			# Ignore lines with invalid years
 			board_year = datetime.datetime.fromtimestamp(int(time)).year
 			if board_year < self.year_lbound or board_year > self.year_ubound: continue
 
-			new_board_id = index + (i + 1)
-			new_user_id = self.mapping['u' + user_id]
+			user_id = int(user_id)
 
 			# Map the node id to its attributes
-			self.attributes[new_board_id] = {'name': board_name, 'description': description}
+			self.attributes[board_id] = {'name': board_name, 'description': description}
 			# Add attribute for 'create' edge
-			self.attributes[(new_board_id, new_user_id)] = {'create_time': time}
+			self.attributes[(board_id, user_id)] = {'create_time': time}
 
 			# Add edge to user that created the board
-			self.pgraph.AddNode(new_board_id)
-			self.pgraph.AddEdge(new_board_id, new_user_id)
+			self.pgraph.AddNode(board_id)
+			self.pgraph.AddEdge(board_id, user_id)
 
-			# Map given board id to our counter id
-			self.mapping['b'+board_id] = new_board_id
 		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
-		self.board_node_ids = (self.user_node_ids[1] + 1, self.user_node_ids[1] + (i + 1))
+		self.board_node_ids = (1 + self.user_node_ids[1], max_board_id)
+		print 'Range:', self.board_node_ids
 
 
 	def read_follows(self):
-		print "reading follows"
+		print "Reading follows..."
 		f = open(self.src_path + "follow.tsv")
-		for i, line in enumerate(f):
+		for line in f:
 			follow_info = line.split('\t')
 			# Break line into components
 			board_id, user_id, time = follow_info
+
+			board_id = self.get_mapped_board_id(int(board_id))
+			user_id = int(user_id)
+
 			# Year is first four characters of time
 			follow_year = int(time[0:4])
+
 			# Ignore invalid years
 			if follow_year < self.year_lbound or follow_year > self.year_ubound: continue
-			mapped_user_id = self.mapping['u'+user_id]
-			mapped_board_id = self.mapping['b'+board_id]
+
 			# Try adding edge; if exists, don't add attribute
-			ret_val  = self.pgraph.AddEdge(mapped_user_id, mapped_board_id)
+			ret_val  = self.pgraph.AddEdge(user_id, board_id)
 			if ret_val != -2:
-				self.attributes[(mapped_board_id, mapped_user_id)] = {'follow_time': time}
-			# Add edge from user to the board s/he follows
+				self.attributes[(board_id, user_id)] = {'follow_time': time}
 		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
 
 
 	def read_pins(self):
-		print "reading pins"
+		print "Reading pins..."
 		f = open(self.src_path + "pins.tsv")
-		index = self.board_node_ids[1]
-		counter = 0
-		seen_before = set()
 		# For every line in file
+		max_pin_id = 0
 		for line in f:
 
 			# Split into attributes
 			pins_info = line.split('\t')
 			time, board_id, pin_id = pins_info
-			pin_id = str(int(pin_id))
-			if pin_id not in seen_before:
-				seen_before.add(pin_id)
-				counter += 1
+
+			pin_id = self.get_mapped_pin_id(int(pin_id))
+			board_id = self.get_mapped_board_id(int(board_id))
+
+			if pin_id > max_pin_id: max_pin_id = pin_id
+
 			# Get year from unix timestamp
 			pin_year = datetime.datetime.fromtimestamp(int(time)).year
+
 			# Ignore pins outside of valid range
 			if pin_year < self.year_lbound or pin_year > self.year_ubound: continue
-			# Ignore if board does not exist
-			if'b'+board_id not in self.mapping: continue
-			pid = index + counter
-			bid = self.mapping['b'+board_id]
+			
 			# Add the pin node to the graph.
-			if not self.pgraph.IsNode(pid): self.pgraph.AddNode(pid)
-			self.pgraph.AddEdge(pid, bid)
-			self.attributes[(bid, pid)] = {'pin_time': time}
-		f.close()
+			if not self.pgraph.IsNode(pin_id): self.pgraph.AddNode(pin_id)
+			
+			# Don't add an edge if the board doesn't exist
+			if not self.pgraph.IsNode(board_id): continue
 
+			self.pgraph.AddEdge(pin_id, board_id)
+			self.attributes[(board_id, pin_id)] = {'pin_time': time}
+
+		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
 		print str(self.pgraph.GetEdges()) + ' Edges'
-		self.pin_node_ids = (self.board_node_ids[1] + 1, self.board_node_ids[1] + counter)
+		self.pin_node_ids = (self.board_node_ids[1] + 1, max_pin_id)
+		print 'Range:', self.pin_node_ids
 
+	def get_mapped_board_id(self, board_id):
+		return int(board_id) + self.user_node_ids[1] + 1
+
+	def get_mapped_pin_id(self, pin_id):
+		return int(pin_id) + self.board_node_ids[1] + 1
 
 if __name__ == '__main__':
 	src_path = sys.argv[1]
@@ -195,6 +206,9 @@ if __name__ == '__main__':
 	print 'Done!'
 	print str(pgraph.GetNodes()) + ' Nodes'
 	print str(pgraph.GetEdges()) + ' Edges'
+	print self.user_node_ids
+	print self.board_node_ids
+	print self.pin_node_ids
 
 
 
