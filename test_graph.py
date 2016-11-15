@@ -1,7 +1,7 @@
 import snap
 import datetime
 import sys
-import pickle 
+import numpy as np 
 
 class Test_Graph:
 
@@ -23,7 +23,8 @@ class Test_Graph:
 		else: self.read_in_graph(node_file_root)
 
 	def read_from_file(self, input_file_root, is_training=False):
-		f = open(output_file_root + '_graph.txt')
+		print 'Reading from file...'
+		f = open(input_file_root + '_graph.txt')
 		cutoffs = []
 		for i in range(3):
 			line = f.readline()
@@ -36,12 +37,14 @@ class Test_Graph:
 			if not is_training: self.pgraph.AddEdge(src_id, dst_id)
 		f.close()
 
-		g = open(output_file_root + '_attr.pickle', 'rb')
-		self.attributes = pickle.load(g)
-		g.close()
+		print self.pgraph.GetNodes()
+		print self.pgraph.GetEdges()
+		print 'Reading attributes...'
+		self.attributes = np.load(input_file_root + '_attr.npy').item()
 
 
 	def write_to_file(self, output_file_root):
+		print 'Saving to file...'
 		f = open(output_file_root + '_graph.txt', 'w')
 		cutoffs = [self.user_node_ids, self.board_node_ids, self.pin_node_ids]
 		for cutoff in cutoffs:
@@ -54,9 +57,8 @@ class Test_Graph:
 			f.write(line)
 		f.close()
 
-		g = open(output_file_root + '_attr.pickle', 'wb')
-		pickle.dump(self.attributes, g)
-		g.close()
+		print 'Saving attributes to file...'
+		np.save(self.attributes, output_file_root + '_attr.npy')
 
 
 	def get_graph(self):
