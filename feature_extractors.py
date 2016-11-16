@@ -7,7 +7,7 @@ import math
 
 #returns the length of the shortest path between 2 nodes
 def get_graph_distance(G, n1, n2, directed=False):
-	return -GetShortPath(G, n1, n2, directed):
+	return -GetShortPath(G, n1, n2, directed)
 
 #returns the number of common neighbors between two nodes
 def get_common_neighbors(G, n1, n2):
@@ -81,8 +81,8 @@ def hitting_time(G, n1, n2, num_steps):
 
 	B = adjacency_matrix.copy()
 	for n in xrange(num_steps):
-    	B = dot(B,A)
-    return -B[n1][n2]
+		B = dot(B,A)
+	return -1*B[n1][n2]
 
 #returns the expected number of steps for a random walk between n1 to reach n2
 def communte_time(G, n1, n2, num_steps):
@@ -102,8 +102,8 @@ def hitting_time_normalized(G, n1, n2, stationary_probability_n2, num_steps):
 
 	B = adjacency_matrix.copy()
 	for n in xrange(num_steps):
-    	B = dot(B,A)
-    return -B[n1][n2]*stationary_probability_n2
+		B = dot(B,A)
+	return -B[n1][n2]*stationary_probability_n2
 
 #returns the normalized expected number of steps for a random walk between n1 to reach n2
 def communte_time_normalized(G, n1, n2, stationary_probability_n1, stationary_probability_n2, num_steps):
@@ -118,7 +118,7 @@ def same_community(G, n1, n2, method):
 	CmtyV = snap.TCnComV()
 	if method == "CNM":
 		modularity = snap.CommunityCNM(UGraph, CmtyV)
-	elif method == "GN"
+	elif method == "GN":
 		modularity = snap.CommunityGirvanNewman(UGraph, CmtyV)
 
 	for cmty in CmtyV:
@@ -149,15 +149,15 @@ def get_in_degree(G, n):
 	InDegV = snap.TIntPrV()
 	snap.GetNodeInDegV(Graph, InDegV)
 	for item in InDegV:
-    	if item.GetVal1() == n.GetId(): return item.GetVal2()
+		if item.GetVal1() == n.GetId(): return item.GetVal2()
 
 def get_out_degree(G, n):
 	InDegV = snap.TIntPrV()
 	snap.GetNodeOutDegV(Graph, InDegV)
 	for item in InDegV:
-    	if item.GetVal1() == n.GetId(): return item.GetVal2()
+		if item.GetVal1() == n.GetId(): return item.GetVal2()
 
-def get_total_degree(G, n):
+# def get_total_degree(G, n):
 
 #################################
 ####NODE CENTRALITY MEASURES#####
@@ -190,10 +190,11 @@ def get_HITS_scores(G, n):
 	NIdHubH = snap.TIntFltH()
 	NIdAuthH = snap.TIntFltH()
 	snap.GetHits(Graph, NIdHubH, NIdAuthH)
-	return NIdHubH[n.GetId(), NIdAuthH[n.GetId()]
+	return NIdHubH[n.GetId(), NIdAuthH[n.GetId()]]
 
 #returns the largest shortest-path distance from a given node n
 #to any other node in the graph G
+
 def get_node_eccentricity(G, n, directed = False):
 	return snap.GetNodeEcc(G, n.GetId(), directed)
 
@@ -275,6 +276,6 @@ def get_number_of_triads_with_node(G, n):
 
 #returns a vector of the number of nodes reachable from node n in hops less than
 #max_hops number of hops
-def get_approximate_neighborhood(G, n, max_hops, directed=false, approx=32):
+def get_approximate_neighborhood(G, n, max_hops, directed=False, approx=32):
 	DistNbrsV = snap.TIntFltKdV()
 	snap.GetAnf(G, n.GetId(), DistNbrsV, max_hops, directed, approx)

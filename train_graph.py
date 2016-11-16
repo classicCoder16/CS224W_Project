@@ -25,7 +25,9 @@ class Train_Graph:
 		# Path to read the files from
 		self.src_path = src_path
 
-		# Times to filter on
+		# Times to filter on, in the form of datetimes.
+		# You can create a datetime object by
+		# dt = datetime.datetime(2012, 10, 31)
 		self.time_lbound = time_lbound
 		self.time_ubound = time_ubound
 
@@ -138,7 +140,6 @@ class Train_Graph:
 			# Get the user id, add to graph
 			user_id = int(line.split()[0])
 			if user_id > max_user_id: max_user_id = user_id
-			self.pgraph.AddNode(user_id)
 
 		f.close()
 		print str(self.pgraph.GetNodes()) + ' Nodes'
@@ -180,8 +181,9 @@ class Train_Graph:
 			board_time = datetime.datetime.fromtimestamp(int(old_board_time))
 			if board_time < self.time_lbound or board_time > self.time_ubound: continue
 
-			# Get the user that created the board
+			# Add the user that created the board
 			user_id = int(user_id)
+			if not self.pgraph.IsNode(user_id): self.pgraph.AddNode(user_id)
 
 			# Map the node id to its attributes
 			self.attributes[board_id] = {'name': board_name, 'description': description}
@@ -228,8 +230,11 @@ class Train_Graph:
 			# Ignore invalid times
 			if follow_time < self.time_lbound or follow_time > self.time_ubound: continue
 
-			# Ignore line if neither node is present
-			if not self.pgraph.IsNode(user_id) or not self.pgraph.IsNode(board_id): continue
+			# Ignore line if board node is present
+			if not self.pgraph.IsNode(board_id): continue
+
+			# Add the user to the graph
+			if not self.pgraph.IsNode(user_id): self.pgraph.AddNode(user_id)
 
 			# Try adding edge; if exists, don't add attribute
 			ret_val  = self.pgraph.AddEdge(user_id, board_id)
@@ -259,7 +264,7 @@ class Train_Graph:
 
 			# Print every million lines
 			counter += 1
-			if counter % 1000000: print 'Line', counter
+			if (counter % 1000000) == 0: print 'Line', counter
 
 			# Split into attributes
 			pins_info = line.split('\t')
