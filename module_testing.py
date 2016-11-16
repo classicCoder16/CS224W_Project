@@ -8,7 +8,7 @@ import datetime
 from train_graph import Train_Graph
 from test_graph import Test_Graph
 from feature_extractors import *
-# from get_examples import *
+from get_examples import *
 
 def test_graph_loading(arguments):
 	print 'Testing graph loading...'
@@ -49,11 +49,16 @@ def test_testing_graph_creation(arguments):
 	print test_graph_obj.pgraph.GetEdges()
 	print 'Done!'
 
-
+def test_feature_extraction(arguments):
+	train_graph_obj = Train_Graph(graph_file_root='smallest_train')
+	pgraph = train_graph_obj.pgraph
+	examples, labels = extract_examples(pgraph, 100, 100)
+	for i, example in enumerate(examples):
+		print pgraph.IsEdge(example[0], example[1]), labels[i]
 
 if __name__ == '__main__':
 	arguments = sys.argv[1:]
 	# test_graph_creation(arguments)
 	# test_graph_loading(arguments)
-
-	test_testing_graph_creation(arguments)
+	# test_testing_graph_creation(arguments)
+	test_feature_extraction(arguments)
