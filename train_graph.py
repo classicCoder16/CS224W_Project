@@ -97,7 +97,7 @@ class Train_Graph:
 		f.close()
 
 		# Save the attributes with numpy
-		np.save(self.attributes, output_file_root + '_attr.npy')
+		np.save(output_file_root + '_attr.npy', self.attributes)
 
 
 	'''

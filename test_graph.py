@@ -99,7 +99,7 @@ class Test_Graph:
 		f.close()
 
 		print 'Saving attributes to file...'
-		np.save(self.attributes, output_file_root + '_attr.npy')
+		np.save(output_file_root + '_attr.npy', self.attributes)
 
 
 	'''
