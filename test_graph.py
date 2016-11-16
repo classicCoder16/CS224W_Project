@@ -2,6 +2,7 @@ import snap
 import datetime
 import sys
 import numpy as np 
+import time
 
 class Test_Graph:
 
@@ -30,7 +31,7 @@ class Test_Graph:
 		self.time_lbound = time_lbound
 
 		# If the graph file is specified, read from file
-		if graph_file is not None: self.read_from_file(graph_file_root)
+		if graph_file_root is not None: self.read_from_file(graph_file_root)
 
 		# Else, create from scratch
 		else: self.read_in_graph(node_file_root)
@@ -137,9 +138,11 @@ class Test_Graph:
 	self.attributes.
 	'''
 	def prune_attr(self):
+		new_attributes = {}
 		for key in self.attributes:
-			if isinstance(key, tuple):
-				self.attributes.pop(key, None)
+			if isinstance(key, tuple): continue
+			new_attributes[key] = self.attributes[key]
+		self.attributes = new_attributes
 
 	'''
 	Function: read_follows
@@ -160,13 +163,13 @@ class Test_Graph:
 			user_id = int(user_id)
 
 			# Get the datetime object from the string
-			follow_time = datetime.datetime.strptime(follow_time, '%Y-%m-%d')
+			follow_time = datetime.datetime.strptime(follow_time.split()[0], '%Y-%m-%d')
 
 			# Ignore invalid times
 			if follow_time < self.time_lbound or follow_time > self.time_ubound: continue
 			
 			# Ignore current edge if neither node is in the training set
-			if not self.pgraph.IsNode(user_id) or not self.pgrapg.IsNode(board_id):
+			if not self.pgraph.IsNode(user_id) or not self.pgraph.IsNode(board_id):
 				continue
 
 			# Add the edge, and set the attribute
@@ -189,17 +192,21 @@ class Test_Graph:
 	def read_pins(self):
 		print "Reading pins..."
 		f = open(self.src_path + "pins.tsv")
-
+		counter = 0
 		# For every line in file
 		for line in f:
+
+			# Print every million lines
+			counter += 1
+			if (counter % 1000000) == 0: print 'Line', counter
 
 			# Split into attributes
 			pins_info = line.split('\t')
 			old_pin_time, board_id, pin_id = pins_info
 
 			# Get the pin id and board id involved
-			pin_id = get_mapped_pin_id(int(pin_id))
-			board_id = get_mapped_board_id(int(board_id))
+			pin_id = self.get_mapped_pin_id(int(pin_id))
+			board_id = self.get_mapped_board_id(int(board_id))
 
 			# Get time from unix timestamp
 			pin_time = datetime.datetime.fromtimestamp(int(old_pin_time))
