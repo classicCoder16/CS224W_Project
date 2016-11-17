@@ -122,7 +122,7 @@ def main():
 	validate_test(test_examples, test_labels, train_examples, test_pgraph, max_scc)
 
 
-	feature_funcs = [preferential_attachment, get_2_hops, is_artic_pt, \
+	feature_funcs = [preferential_attachment, get_2_hops, \
 					get_degree_sum, get_coeff_sum]
 					# , get_graph_distance]
 	# test_proximity(feature_funcs, test_examples, test_labels, max_scc, 5000)
