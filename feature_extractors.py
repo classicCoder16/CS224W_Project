@@ -7,7 +7,9 @@ import math
 
 #returns the length of the shortest path between 2 nodes
 def get_graph_distance(G, n1, n2, directed=False):
-	return -snap.GetShortPath(G, n1, n2, directed)
+	if G.IsEdge(n1, n2): G.DelEdge(n1, n2)
+	result = -snap.GetShortPath(G, n1, n2, directed)
+	if not G.IsEdge(n1, n2): G.AddEdge(n1, n2)
 
 #returns the number of common neighbors between two nodes
 def get_common_neighbors(G, n1, n2):

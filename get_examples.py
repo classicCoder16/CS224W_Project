@@ -24,8 +24,8 @@ def get_n_test_edges(train_graph, test_graph, n, pos=True):
 	while len(curr_edges) != n:
 
 		# Randomly generate ids
-		src_id = graph.GetRndNId()
-		dst_id = graph.GetRndNId()
+		src_id = test_graph.GetRndNId()
+		dst_id = test_graph.GetRndNId()
 
 		# No self-loops
 		if src_id == dst_id: continue
@@ -85,6 +85,15 @@ def get_n_edges(graph, n, pos=True):
 	# Return the set of pairs as a list.
 	return list(curr_edges)
 
+def get_pos_test_edges(test_graph, train_ex, num_pos):
+	all_edges = []
+	all_train_ex = set(train_ex)
+	for edge in test_graph.Edges():
+		cand_pair = tuple(sorted([edge.GetSrcNId(), edge.GetDstNId()]))
+		if cand_pair in all_train_ex: continue
+		all_edges.append(cand_pair)
+	return random.sample(all_edges, num_pos)
+
 
 '''
 Function: extract_examples
@@ -97,7 +106,8 @@ def extract_examples(graph, num_pos, num_neg):
 	# Get pos edges and labels
 	print 'Getting positve edges...'
 	# pos_edges = get_n_edges(graph, num_pos)
-	pos_edges = random.sample([(edge.GetSrcNId(), edge.GetDstNId()) for edge in graph.Edges()], num_pos)
+	pos_edges = random.sample([tuple(sorted((edge.GetSrcNId(), edge.GetDstNId()))) \
+					for edge in graph.Edges()], num_pos)
 	pos_labels = [1]*len(pos_edges)
 
 	# Get negative edges and labels
@@ -117,11 +127,11 @@ Function: extract_examples
 Function that returns num pos + num neg
 id/label pairs from the given graph
 '''
-def extract_test_examples(train_graph, test_graph, num_pos, num_neg):
+def extract_test_examples(train_graph, test_graph, train_ex, num_pos, num_neg):
 	print 'Extracting examples from graph...'
 	# Get pos edges and labels
 	print 'Getting positve edges...'
-	pos_edges = random.sample([(edge.GetSrcNId(), edge.GetDstNId()) for edge in train_graph.Edges()], num_pos)
+	pos_edges = get_pos_test_edges(test_graph, train_ex, num_pos)
 	pos_labels = [1]*len(pos_edges)
 
 	# Get negative edges and labels

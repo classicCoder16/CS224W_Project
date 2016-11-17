@@ -55,17 +55,18 @@ def test_feature_extraction(arguments):
 	train_pgraph = train_graph_obj.pgraph
 	train_examples, train_labels = extract_examples(train_pgraph, 10000, 10000)
 
-	# print 'Extracting testing examples'
-	# test_graph_obj = Train_Graph(graph_file_root='smallest_test')
-	# test_pgraph = test_graph_obj.pgraph
-	# test_examples, test_labels = extract_examples(test_pgraph, 1000, 1000)
-	# print 'Done!'
+	print 'Extracting testing examples'
+	test_graph_obj = Train_Graph(graph_file_root='smallest_test')
+	test_pgraph = test_graph_obj.pgraph
+	test_examples, test_labels = extract_test_examples(train_pgraph, test_pgraph, \
+														train_examples, 1000, 1000)
+	print 'Done!'
 
-	print 'Graph Distance:', get_graph_distance(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
-	print 'Common Neighbors:', get_common_neighbors(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
-	print 'Jaccard Coefficient:', jaccard_coefficient(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
-	print 'Adamic Adar:', adamic_adar(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
-	print 'Preferential Attachment:', preferential_attachment(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
+	print 'Graph Distance:', get_graph_distance(train_pgraph, train_examples[0][0], train_examples[0][1])
+	print 'Common Neighbors:', get_common_neighbors(train_pgraph, train_examples[0][0], train_examples[0][1])
+	print 'Jaccard Coefficient:', jaccard_coefficient(train_pgraph, train_examples[0][0], train_examples[0][1])
+	print 'Adamic Adar:', adamic_adar(train_pgraph, train_examples[0][0], train_examples[0][1])
+	print 'Preferential Attachment:', preferential_attachment(train_pgraph, train_examples[0][0], train_examples[0][1])
 
 
 if __name__ == '__main__':
