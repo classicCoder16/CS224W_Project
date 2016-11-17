@@ -1,5 +1,6 @@
 import snap
 import math
+import numpy as np
 
 #####################################
 ######LINK PREDICTION MEASURES#######
@@ -62,7 +63,7 @@ def preferential_attachment(G, n1, n2):
 	if G.IsEdge(n1, n2):
 		G.DelEdge(n1, n2)
 		deleted = True
-	rseult = get_out_degree(G, n1) * get_out_degree(G, n2)
+	result = get_out_degree(G, n1) * get_out_degree(G, n2)
 	if deleted: G.AddEdge(n1, n2)
 	return result
 
@@ -176,9 +177,9 @@ def same_community(G, n1, n2, method = "CNM"):
 
 	CmtyV = snap.TCnComV()
 	if method == "CNM":
-		modularity = snap.CommunityCNM(UGraph, CmtyV)
+		modularity = snap.CommunityCNM(G, CmtyV)
 	elif method == "GN":
-		modularity = snap.CommunityGirvanNewman(UGraph, CmtyV)
+		modularity = snap.CommunityGirvanNewman(G, CmtyV)
 
 	for cmty in CmtyV:
 		cmty_set = set(cmty)
@@ -213,16 +214,14 @@ def friends_measure(G, n1, n2):
 #################################
 
 def get_in_degree(G, n):
-	InDegV = snap.TIntPrV()
-	snap.GetNodeInDegV(Graph, InDegV)
-	for item in InDegV:
-		if item.GetVal1() == n(): return item.GetVal2()
+	# InDegV = snap.TIntPrV()
+	# snap.GetNodeInDegV(Graph, InDegV)
+	# for item in InDegV:
+	# 	if item.GetVal1() == n: return item.GetVal2()
+	return G.GetNI(n).GetInDeg()
 
 def get_out_degree(G, n):
-	InDegV = snap.TIntPrV()
-	snap.GetNodeOutDegV(Graph, InDegV)
-	for item in InDegV:
-		if item.GetVal1() == n(): return item.GetVal2()
+	return G.GetNI(n).GetOutDeg()
 
 
 #################################
@@ -254,7 +253,7 @@ def get_page_rank(G, n):
 def get_HITS_scores(G, n):
 	NIdHubH = snap.TIntFltH()
 	NIdAuthH = snap.TIntFltH()
-	snap.GetHits(Graph, NIdHubH, NIdAuthH)
+	snap.GetHits(G, NIdHubH, NIdAuthH)
 	return NIdHubH[n()], NIdAuthH[n()]
 
 #returns the largest shortest-path distance from a given node n
@@ -316,7 +315,7 @@ def is_articulation_point(G, n):
 #returns true if an edge is a bridge and false otherwise
 def is_edge_a_bridge(G, e):
 	EdgeV = snap.TIntPrV()
-	snap.GetEdgeBridges(UGraph, EdgeV)
+	snap.GetEdgeBridges(G, EdgeV)
 	return (e.GetVal1(), e.GetVal2()) in set(EdgeV)
 
 
