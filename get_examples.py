@@ -16,16 +16,18 @@ Function that, given a graph and a number,
 returns n unique pairs of either connected nodes 
 or unconnected nodes, depending on the value of pos. 
 '''
-def get_n_test_edges(train_graph, test_graph, n, pos=True):
+def get_n_test_edges(train_graph, test_graph, train_ex, n, pos=True):
 	curr_edges = set()
 
 	# Keep randomly sampling pairs of nodes
 	# until we get n valid, unique pairs.
+
+	all_train_ex = set(train_ex)
 	while len(curr_edges) != n:
 
 		# Randomly generate ids
-		src_id = test_graph.GetRndNId()
-		dst_id = test_graph.GetRndNId()
+		src_id = train_graph.GetRndNId()
+		dst_id = train_graph.GetRndNId()
 
 		# No self-loops
 		if src_id == dst_id: continue
@@ -33,10 +35,7 @@ def get_n_test_edges(train_graph, test_graph, n, pos=True):
 		# Form the candidate pair
 		cand_pair = tuple(sorted([src_id, dst_id]))
 
-		# # If we want positive samples, and it is an existing edge,
-		# # add the pair to the set
-		# if pos and graph.IsEdge(cand_pair[0], cand_pair[1]):
-		# 	curr_edges.add(cand_pair)
+		if cand_pair in all_train_ex: continue
 
 		# Else, if we want negative samples, and it is not an edge,
 		# add the pair to the set. 
@@ -85,12 +84,15 @@ def get_n_edges(graph, n, pos=True):
 	# Return the set of pairs as a list.
 	return list(curr_edges)
 
-def get_pos_test_edges(test_graph, train_ex, num_pos):
+def get_pos_test_edges(train_graph, test_graph, train_ex, num_pos):
 	all_edges = []
 	all_train_ex = set(train_ex)
 	for edge in test_graph.Edges():
 		cand_pair = tuple(sorted([edge.GetSrcNId(), edge.GetDstNId()]))
 		if cand_pair in all_train_ex: continue
+		src_id = cand_pair[0]
+		dst_id = cand_pair[1]
+		if not train_graph.IsNode(src_id) or not train_graph.IsNode(dst_id): continue
 		all_edges.append(cand_pair)
 	return random.sample(all_edges, num_pos)
 
@@ -131,12 +133,12 @@ def extract_test_examples(train_graph, test_graph, train_ex, num_pos, num_neg):
 	print 'Extracting examples from graph...'
 	# Get pos edges and labels
 	print 'Getting positve edges...'
-	pos_edges = get_pos_test_edges(test_graph, train_ex, num_pos)
+	pos_edges = get_pos_test_edges(train_graph, test_graph, train_ex, num_pos)
 	pos_labels = [1]*len(pos_edges)
 
 	# Get negative edges and labels
 	print 'Getting negative edges...'
-	neg_edges = get_n_test_edges(train_graph, test_graph, num_neg, pos=False)
+	neg_edges = get_n_test_edges(train_graph, test_graph, train_ex, num_neg, pos=False)
 	neg_labels = [-1]*len(neg_edges)
 
 	# Concatenate together

@@ -8,17 +8,22 @@ import scipy
 #####################################
 
 def get_2_hops(G, n1, n2, directed=False):
+	deleted = False
+	if G.IsEdge(n1, n2):
+		G.DelEdge(n1, n2)
+		deleted = True
 	result = 0
-	if n1 in range(18630353,31097109) and n2 not in range(18630353,31097109):
+	if (n1 >= 18630353 and n1 < 31097109) and (n2 < 18630353 or n2 >= 31097109):
 		b_neighbors = snap.TIntV()
 		snap.GetNodesAtHop(G, n1, 1, b_neighbors, directed)
 		for n in b_neighbors:
 			result += snap.GetCmnNbrs(G, n, n2)
-	elif n2 in range(18630353,31097109) and n1 not in range(18630353,31097109):
+	elif (n2 >= 18630353 and n2 < 31097109) and (n1 < 18630353 or n1 >= 31097109):
 		b_neighbors = snap.TIntV()
 		snap.GetNodesAtHop(G, n2, 1, b_neighbors, directed)
 		for n in b_neighbors:
 			result += snap.GetCmnNbrs(G, n, n1)
+	if deleted: G.AddEdge(n1, n2)
 	return result
 
 #returns the length of the shortest path between 2 nodes
@@ -27,7 +32,7 @@ def get_graph_distance(G, n1, n2, directed=False):
 	if G.IsEdge(n1, n2):
 		G.DelEdge(n1, n2)
 		deleted = True
-	result = -snap.GetShortPath(G, n1, n2, directed)
+	result = -1*snap.GetShortPath(G, n1, n2, directed)
 	if deleted: G.AddEdge(n1, n2)
 	return result
 
@@ -81,7 +86,7 @@ def preferential_attachment(G, n1, n2):
 		deleted = True
 	nodel1 = G.GetNI(n1)
 	nodel2 = G.GetNI(n2)
-	result = nodel1.GetDeg() * nodel2.GetDeg()
+	result = nodel1.GetOutDeg() * nodel2.GetOutDeg()
 	if deleted: G.AddEdge(n1, n2)
 	return result
 
@@ -163,7 +168,7 @@ def get_adjacency_matrix(G, node_map):
 		A[node_map[edge.GetDstNId()]][node_map[edge.GetSrcNId()]]  = 1
 	return A
 
-def sim_rank(G, n1, n2, gamma=0.8):
+def sim_rank(G, n1, n2, gamma=0.8, directed=False):
 	deleted = False
 	if G.IsEdge(n1, n2):
 		G.DelEdge(n1, n2)
@@ -171,9 +176,8 @@ def sim_rank(G, n1, n2, gamma=0.8):
 	sim_rank_wrapper(G, n1, n2, gamma)
 	if deleted: G.AddEdge(n1, n2)
 
-def sim_rank_wrapper(G, n1, n2, gamma):
+def sim_rank_wrapper(G, n1, n2, gamma, directed=False):
 	if n1 == n2: return 1
-
 	constant = gamma/preferential_attachment(G, n1, n2)
 	n1_neighbors = snap.TIntV()
 	snap.GetNodesAtHop(G, n1, 1, n1_neighbors, directed)
@@ -182,7 +186,7 @@ def sim_rank_wrapper(G, n1, n2, gamma):
 	result = 0
 	for a in n1_neighbors:
 		for b in n2_neighbors:
-			result += sim_rank_wrapper(G, a, b)
+			result += sim_rank_wrapper(G, a, b, gamma)
 	return result * constant
 
 #returns the expected number of steps required for a random walk starting
@@ -265,7 +269,7 @@ def same_community(G, n1, n2, method = "CNM"):
 	return 0
 
 #returns the number of connections between n1 and n2 neighborhoods
-def friends_measure(G, n1, n2):
+def friends_measure(G, n1, n2, directed=False):
 	deleted = False
 	if G.IsEdge(n1, n2):
 		G.DelEdge(n1, n2)
@@ -303,38 +307,38 @@ def get_out_degree(G, n):
 ####NODE CENTRALITY MEASURES#####
 #################################
 def get_degree_centrality(G, n):
-	return snap.GetDegreeCentr(G, n())
+	return snap.GetDegreeCentr(G, n)
 
 def get_node_betweenness_centrality(G, n, directed = False):
 	nodes = snap.TIntFltH()
 	edges = snap.TIntPrFltH()
 	snap.GetBetweennessCentr(G, nodes, edges, 1.0)
-	return nodes[n()]
+	return nodes[n]
 
 def get_closeness_centrality(G, n, directed = False):
-	return snap.GetClosenessCentr(G, n(), IsDir=directed)
+	return snap.GetClosenessCentr(G, n, True, directed)
 
 #returns the average shortest path length to all other nodes that reside in the
 #connected component of the given node
 def get_farness_centrality(G, n, directed = False):
-	return snap.GetFarnessCentr(G, n(), IsDir=directed)
+	return snap.GetFarnessCentr(G, n, IsDir=directed)
 
 def get_page_rank(G, n):
 	PRankH = snap.TIntFltH()
 	snap.GetPageRank(G, PRankH)
-	return PRankH[n()]
+	return PRankH[n]
 
 #returns the HITS score of a given node as a hub score, authority score tuple 
 def get_HITS_scores(G, n):
 	NIdHubH = snap.TIntFltH()
 	NIdAuthH = snap.TIntFltH()
 	snap.GetHits(G, NIdHubH, NIdAuthH)
-	return NIdHubH[n()], NIdAuthH[n()]
+	return NIdHubH[n], NIdAuthH[n]
 
 #returns the largest shortest-path distance from a given node n
 #to any other node in the graph G
 def get_node_eccentricity(G, n, directed = False):
-	return snap.GetNodeEcc(G, n(), directed)
+	return snap.GetNodeEcc(G, n, directed)
 
 def get_edge_betweenness_centrality(G, e, directed = False):
 	nodes = snap.TIntFltH()
@@ -348,14 +352,14 @@ def get_edge_betweenness_centrality(G, e, directed = False):
 
 #returns the length of the shortest path between two given nodes
 def get_shortest_path_to_one_node(G, src_n, dst_n, directed=False):
-	return GetShortPath(G, src_n(), dst_n(), directed)
+	return GetShortPath(G, src_n, dst_n, directed)
 
 #returns the length of the shortest path from a given node and 
 #a mapping of node id to path length for the shortest path
 #from a given node to each node in the mapping
 def get_shortest_path_to_all_nodes(G, src_n, directed=False):
 	NIdToDistH = snap.TIntH()
-	shortestPath = snap.GetShortPath(G, src_n(), NIdToDistH, directed)
+	shortestPath = snap.GetShortPath(G, src_n, NIdToDistH, directed)
 	return shortestPath, NIdToDistH
 
 #returns the diameter of a graph or subgraph
@@ -379,13 +383,13 @@ def is_graph_weakly_connected(G):
 #returns the size of the connected component in which a node lies
 def get_size_of_conn_comp(G, n):
 	CnCom = snap.TIntV()
-	return len(snap.GetNodeWcc(G, n(), CnCom))
+	return len(snap.GetNodeWcc(G, n, CnCom))
 
 #returns true if a node is an articulation point and false otherwise
 def is_articulation_point(G, n):
 	ArtNIdV = snap.TIntV()
 	snap.GetArtPoints(G, ArtNIdV)
-	return n() in set(ArtNIdV)
+	return n in set(ArtNIdV)
 
 #returns true if an edge is a bridge and false otherwise
 def is_edge_a_bridge(G, e):
@@ -404,16 +408,46 @@ def get_modularity(G, nodes):
 	return snap.GetModularity(G, nodes, G.GetEdges())
 
 def get_number_of_shared_neighbors(G, n1, n2):
-	return snap.GetCmnNbrs(G, n1(), n2())
+	return snap.GetCmnNbrs(G, n1, n2)
 
-def get_cluseting_coefficient(G, n):
-	return snap.GetNodeClustCf(G, n())
+def get_clustering_coefficient(G, n):
+	return snap.GetNodeClustCf(G, n)
 
 def get_number_of_triads_with_node(G, n):
-	return snap.GetNodeTriads(G, n())
+	return snap.GetNodeTriads(G, n)
 
 #returns a vector of the number of nodes reachable from node n in hops less than
 #max_hops number of hops
 def get_approximate_neighborhood(G, n, max_hops, directed=False, approx=32):
 	DistNbrsV = snap.TIntFltKdV()
-	snap.GetAnf(G, n(), DistNbrsV, max_hops, directed, approx)
+	snap.GetAnf(G, n, DistNbrsV, max_hops, directed, approx)
+
+
+#############################
+# New Feature Functions (AVP)
+#############################
+
+def get_betw_sum(G, n1, n2):
+	return get_node_betweenness_centrality(G, n1) + \
+			get_node_betweenness_centrality(G, n2)
+
+def get_degree_sum(G, n1, n2):
+	return get_degree_centrality(G, n1) + \
+			get_degree_centrality(G, n2)
+
+def get_closeness_sum(G, n1, n2):
+	return get_closeness_centrality(G, n1) + \
+			get_closeness_centrality(G, n2)
+
+def get_coeff_sum(G, n1, n2):
+	return get_clustering_coefficient(G, n1) + \
+			get_clustering_coefficient(G, n2)
+
+def get_page_rank_sum(G, n1, n2):
+	return get_page_rank(G, n1) + get_page_rank(G, n2)
+
+def get_hubs_sum(G, n1, n2):
+	return get_HITS_scores(G, n1)[0] + get_HITS_scores(G, n2)[0]
+
+def get_auths_sum(G, n1, n2):
+	return get_HITS_scores(G, n1)[1] + get_HITS_scores(G, n2)[1]
