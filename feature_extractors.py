@@ -1,10 +1,25 @@
 import snap
 import math
 import numpy as np
+import scipy
 
 #####################################
 ######LINK PREDICTION MEASURES#######
 #####################################
+
+def get_2_hops(G, n1, n2, directed=False):
+	result = 0
+	if n1 in range(18630353,31097109) and n2 not in range(18630353,31097109):
+		b_neighbors = snap.TIntV()
+		snap.GetNodesAtHop(G, n1, 1, b_neighbors, directed)
+		for n in b_neighbors:
+			result += snap.GetCmnNbrs(G, n, n2)
+	elif n2 in range(18630353,31097109) and n1 not in range(18630353,31097109):
+		b_neighbors = snap.TIntV()
+		snap.GetNodesAtHop(G, n2, 1, b_neighbors, directed)
+		for n in b_neighbors:
+			result += snap.GetCmnNbrs(G, n, n1)
+	return result
 
 #returns the length of the shortest path between 2 nodes
 def get_graph_distance(G, n1, n2, directed=False):
@@ -14,6 +29,7 @@ def get_graph_distance(G, n1, n2, directed=False):
 		deleted = True
 	result = -snap.GetShortPath(G, n1, n2, directed)
 	if deleted: G.AddEdge(n1, n2)
+	return result
 
 #returns the number of common neighbors between two nodes
 def get_common_neighbors(G, n1, n2):
@@ -33,7 +49,7 @@ def jaccard_coefficient(G, n1, n2):
 		G.DelEdge(n1, n2)
 		deleted = True
 	common_neighbors = snap.GetCmnNbrs(G, n1, n2)
-	total_neighbors = get_out_degree(G, n1) + get_out_degree(G, n2)
+	total_neighbors = G.GetNI(n1).GetDeg() + G.GetNI(n2).GetDeg()
 	result = 0.0 if total_neighbors == 0 else float(common_neighbors)/total_neighbors
 	if deleted: G.AddEdge(n1, n2)
 	return result
@@ -52,7 +68,7 @@ def adamic_adar(G, n1, n2, directed = False):
 
 	aa = 0.0
 	for n in total_neighbors:
-		aa += 1.0/math.log(get_out_degree(G, n))
+		aa += 1.0/math.log(G.GetNI(n).GetDeg())
 
 	if deleted: G.AddEdge(n1, n2)
 	return aa
@@ -63,29 +79,88 @@ def preferential_attachment(G, n1, n2):
 	if G.IsEdge(n1, n2):
 		G.DelEdge(n1, n2)
 		deleted = True
-	result = get_out_degree(G, n1) * get_out_degree(G, n2)
+	nodel1 = G.GetNI(n1)
+	nodel2 = G.GetNI(n2)
+	result = nodel1.GetDeg() * nodel2.GetDeg()
 	if deleted: G.AddEdge(n1, n2)
 	return result
 
 #returns the katz score between two nodes
-def katz_measure(G, n1, n2, beta=0.05):
+def katz_measure(G, n1, n2, beta=0.05, directed = False):
 	deleted = False
 	if G.IsEdge(n1, n2):
 		G.DelEdge(n1, n2)
 		deleted = True
-	adjacency_matrix = get_adjacency_matrix(G)
+
+	result = 0
+	for i in range(1,6):
+		visited = set([n1])
+		result += beta**i*get_num_paths(G, i, n1, n2, visited, directed)
+		print result
+	'''
+	result = 0
+	if G.IsEdge(n1, n2): result += beta
+	n = [n1]
+	for i in range(2, 6):
+		print i
+		new_n = set()
+		for ni in n:
+			result += beta**i*snap.GetCmnNbrs(G, ni, n2)
+			n1_neighbors = snap.TIntV()
+			snap.GetNodesAtHop(G, ni, 1, n1_neighbors, directed)
+			new_n.update(n1_neighbors)
+		n = list()
+	'''
+	if deleted: G.AddEdge(n1, n2)
+	return result
+
+def get_num_paths(G, i, n1, n2, visited, directed):
+	if i == 0:
+		if n1 == n2: return 1
+		return 0
+	n1_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n1, 1, n1_neighbors, directed)
+	result = 0
+	for n in n1_neighbors:
+		if n not in visited:
+			visited.add(n)
+			result += get_num_paths(G, i-1, n, n2, visited, directed)
+			visited.remove(n)
+	return result
+
+		
+
+	'''
+	deleted = False
+	if G.IsEdge(n1, n2):
+		G.DelEdge(n1, n2)
+		deleted = True
+	index = 0
+	node_map = {}
+	for n in G.Nodes():
+		node_map[n.GetID()] = index
+		index += 1
 	idenitity_matrix = np.identity(G.GetNodes())
+	adjacency_matrix = get_adjacency_matrix(G, node_map)
 	katz_scores = numpy.linalg.inv(idenitity_matrix-beta * adjacency_matrix) - idenitity_matrix
 	if deleted: G.AddEdge(n1, n2)
 	return katz_scores[n1][n2]
+	'''
 
 #generates the adjacency matrix for the graph
-def get_adjacency_matrix(G):
+def get_adjacency_matrix(G, node_map):
+	'''
 	n_rows = G.GetNodes()
 	A = np.zeros(shape =(n_rows, n_rows))
 	for edge in G.Edges():
 		A[edge.GetSrcNId()][edge.GetDstNId()]  = 1
 		A[edge.GetDstNId()][edge.GetSrcNId()]  = 1
+	return A
+	'''
+	A = scipy.sparse.csr_matrix((G.GetNodes(), G.GetNodes()), dtype=np.int8).toarray()
+	for edge in G.Edges():
+		A[node_map[edge.GetSrcNId()]][node_map[edge.GetDstNId()]]  = 1
+		A[node_map[edge.GetDstNId()]][node_map[edge.GetSrcNId()]]  = 1
 	return A
 
 def sim_rank(G, n1, n2, gamma=0.8):
