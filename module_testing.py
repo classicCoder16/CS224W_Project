@@ -50,11 +50,23 @@ def test_testing_graph_creation(arguments):
 	print 'Done!'
 
 def test_feature_extraction(arguments):
+	print 'Extracting training examples.'
 	train_graph_obj = Train_Graph(graph_file_root='smallest_train')
-	pgraph = train_graph_obj.pgraph
-	examples, labels = extract_examples(pgraph, 100, 100)
-	for i, example in enumerate(examples):
-		print pgraph.IsEdge(example[0], example[1]), labels[i]
+	train_pgraph = train_graph_obj.pgraph
+	train_examples, train_labels = extract_examples(train_pgraph, 10000, 10000)
+
+	# print 'Extracting testing examples'
+	# test_graph_obj = Train_Graph(graph_file_root='smallest_test')
+	# test_pgraph = test_graph_obj.pgraph
+	# test_examples, test_labels = extract_examples(test_pgraph, 1000, 1000)
+	# print 'Done!'
+
+	print 'Graph Distance:', get_graph_distance(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
+	print 'Common Neighbors:', get_common_neighbors(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
+	print 'Jaccard Coefficient:', jaccard_coefficient(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
+	print 'Adamic Adar:', adamic_adar(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
+	print 'Preferential Attachment:', preferential_attachment(train_pgraph, train_examples[0][0], train_examples[0][1], directed=False)
+
 
 if __name__ == '__main__':
 	arguments = sys.argv[1:]

@@ -85,7 +85,7 @@ def hitting_time(G, n1, n2, num_steps):
 	return -B[n1][n2]
 
 #returns the expected number of steps for a random walk between n1 to reach n2
-def communte_time(G, n1, n2, num_steps):
+def commute_time(G, n1, n2, num_steps):
 	return hitting_time(G, n1, n2, num_steps) + hitting_time(G, n2, n1, num_steps)
 
 #returns the normalized expected number of steps required for a random walk starting
