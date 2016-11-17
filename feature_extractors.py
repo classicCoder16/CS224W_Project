@@ -389,7 +389,7 @@ def get_size_of_conn_comp(G, n):
 def is_articulation_point(G, n):
 	ArtNIdV = snap.TIntV()
 	snap.GetArtPoints(G, ArtNIdV)
-	return n in set(ArtNIdV)
+	return n in ArtNIdV
 
 #returns true if an edge is a bridge and false otherwise
 def is_edge_a_bridge(G, e):
@@ -451,3 +451,7 @@ def get_hubs_sum(G, n1, n2):
 
 def get_auths_sum(G, n1, n2):
 	return get_HITS_scores(G, n1)[1] + get_HITS_scores(G, n2)[1]
+
+def is_artic_pt(G, n1, n2):
+	if is_articulation_point(G, n1) or is_articulation_point(G, n2): return 1.0
+	return 0.0
