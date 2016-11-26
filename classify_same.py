@@ -16,9 +16,10 @@ def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 	knn = KNeighborsClassifier()
 	logistic = LogisticRegression()
 	rf = RandomForestClassifier(n_estimators=100)
-	my_nn = MLPClassifier()
+	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50))
 	models = [knn, logistic, rf, my_nn]
 	for model in models:
+		print ''
 		print 'Training model', model
 		model.fit(train_examples, train_labels)
 		preds = model.predict(test_examples)
@@ -28,6 +29,7 @@ def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 		print 'Precision:', sklearn.metrics.precision_score(gt, preds)
 		print 'Recall:', sklearn.metrics.recall_score(gt, preds)
 		print 'F1 Score:', sklearn.metrics.f1_score(gt, preds)
+		print ''
 
 		print 'Training Set Results:'
 		preds = model.predict(train_examples)
@@ -36,6 +38,7 @@ def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 		print 'Precision:', sklearn.metrics.precision_score(gt_train, preds)
 		print 'Recall:', sklearn.metrics.recall_score(gt_train, preds)
 		print 'F1 Score:', sklearn.metrics.f1_score(gt_train, preds)
+		print ''
 
 
 def get_all_features(feature_funcs, train_graph, train_examples, test_examples):
@@ -62,6 +65,7 @@ def test_func(test_examples, test_labels, train_graph, func, num_pos):
 		if i < num_pos: final_preds.append(1)
 		else: final_preds.append(-1)
 	preds, gt = map(list, zip(*preds))
+	print ''
 	print 'Accuracy:', sklearn.metrics.accuracy_score(gt, final_preds)
 	print 'Precision:', sklearn.metrics.precision_score(gt, final_preds)
 	print 'Recall:', sklearn.metrics.recall_score(gt, final_preds)
@@ -94,11 +98,15 @@ def validate_test(test_examples, test_labels, train_examples, test_graph, train_
 
 
 def main(root):
+	# Get the filenames
 	train_file = root + '_train.txt'
 	test_file = root + '_test.txt'
+
+	# Load edges from files
 	train_graph = snap.LoadEdgeList(snap.PUNGraph, train_file, 0, 1)
 	test_graph = snap.LoadEdgeList(snap.PUNGraph, test_file, 0, 1)
 
+	# Sample training examples
 	train_examples, train_labels = extract_examples(train_graph, 10000, 10000)
 	validate_train(train_examples, train_labels, train_graph)
 

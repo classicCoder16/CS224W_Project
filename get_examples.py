@@ -16,7 +16,7 @@ Function that, given a graph and a number,
 returns n unique pairs of either connected nodes 
 or unconnected nodes, depending on the value of pos. 
 '''
-def get_n_test_edges(train_graph, test_graph, train_ex, n, pos=True):
+def get_n_test_edges(train_graph, test_graph, train_ex, n, board_ids):
 	curr_edges = set()
 
 	# Keep randomly sampling pairs of nodes
@@ -31,6 +31,9 @@ def get_n_test_edges(train_graph, test_graph, train_ex, n, pos=True):
 
 		# No self-loops
 		if src_id == dst_id: continue
+		if board_ids is not None:
+			if (isBoard(src_id, board_ids) and isBoard(dst_id, board_ids)) or \
+				((not isBoard(src_id, board_ids)) and (not isBoard(dst_id, board_ids))): continue
 
 		# Form the candidate pair
 		cand_pair = tuple(sorted([src_id, dst_id]))
@@ -39,7 +42,7 @@ def get_n_test_edges(train_graph, test_graph, train_ex, n, pos=True):
 
 		# Else, if we want negative samples, and it is not an edge,
 		# add the pair to the set. 
-		if not pos and not train_graph.IsEdge(cand_pair[0], cand_pair[1]) \
+		if not train_graph.IsEdge(cand_pair[0], cand_pair[1]) \
 		and not test_graph.IsEdge(cand_pair[0], cand_pair[1]):
 			curr_edges.add(cand_pair)
 
@@ -54,7 +57,7 @@ Function that, given a graph and a number,
 returns n unique pairs of either connected nodes 
 or unconnected nodes, depending on the value of pos. 
 '''
-def get_n_edges(graph, n, pos=True):
+def get_n_edges(graph, n):
 	curr_edges = set()
 
 	# Keep randomly sampling pairs of nodes
@@ -71,20 +74,19 @@ def get_n_edges(graph, n, pos=True):
 		# Form the candidate pair
 		cand_pair = tuple(sorted([src_id, dst_id]))
 
-		# If we want positive samples, and it is an existing edge,
-		# add the pair to the set
-		if pos and graph.IsEdge(cand_pair[0], cand_pair[1]):
-			curr_edges.add(cand_pair)
-
 		# Else, if we want negative samples, and it is not an edge,
 		# add the pair to the set. 
-		elif not pos and not graph.IsEdge(cand_pair[0], cand_pair[1]):
+		if not graph.IsEdge(cand_pair[0], cand_pair[1]):
 			curr_edges.add(cand_pair)
 
 	# Return the set of pairs as a list.
 	return list(curr_edges)
 
-def get_pos_test_edges(train_graph, test_graph, train_ex, num_pos):
+
+def isBoard(n, board_ids):
+	return n >= board_ids[0] and n <= board_ids[1]
+
+def get_pos_test_edges(train_graph, test_graph, train_ex, num_pos, board_ids):
 	all_edges = []
 	all_train_ex = set(train_ex)
 	for edge in test_graph.Edges():
@@ -93,6 +95,9 @@ def get_pos_test_edges(train_graph, test_graph, train_ex, num_pos):
 		src_id = cand_pair[0]
 		dst_id = cand_pair[1]
 		if not train_graph.IsNode(src_id) or not train_graph.IsNode(dst_id): continue
+		if board_ids is not None:
+			if (isBoard(src_id, board_ids) and isBoard(dst_id, board_ids)) or \
+				((not isBoard(src_id, board_ids)) and (not isBoard(dst_id, board_ids))): continue
 		all_edges.append(cand_pair)
 	return random.sample(all_edges, num_pos)
 
@@ -114,7 +119,7 @@ def extract_examples(graph, num_pos, num_neg):
 
 	# Get negative edges and labels
 	print 'Getting negative edges...'
-	neg_edges = get_n_edges(graph, num_neg, pos=False)
+	neg_edges = get_n_edges(graph, num_neg)
 	neg_labels = [-1]*len(neg_edges)
 
 	# Concatenate together
@@ -129,16 +134,16 @@ Function: extract_examples
 Function that returns num pos + num neg
 id/label pairs from the given graph
 '''
-def extract_test_examples(train_graph, test_graph, train_ex, num_pos, num_neg):
+def extract_test_examples(train_graph, test_graph, train_ex, num_pos, num_neg, board_ids=None):
 	print 'Extracting examples from graph...'
 	# Get pos edges and labels
 	print 'Getting positve edges...'
-	pos_edges = get_pos_test_edges(train_graph, test_graph, train_ex, num_pos)
+	pos_edges = get_pos_test_edges(train_graph, test_graph, train_ex, num_pos, board_ids)
 	pos_labels = [1]*len(pos_edges)
 
 	# Get negative edges and labels
 	print 'Getting negative edges...'
-	neg_edges = get_n_test_edges(train_graph, test_graph, train_ex, num_neg, pos=False)
+	neg_edges = get_n_test_edges(train_graph, test_graph, train_ex, num_neg, board_ids)
 	neg_labels = [-1]*len(neg_edges)
 
 	# Concatenate together

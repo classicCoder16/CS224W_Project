@@ -3,9 +3,83 @@ import math
 import numpy as np
 import scipy
 
+
+NIdEigenH = None
+PRankH = None
 #####################################
 ######LINK PREDICTION MEASURES#######
 #####################################
+
+def get_page_rank_sum(G, n1, n2):
+	global PRankH
+	if PRankH is None:
+		print 'Initializing Page Rank'
+		PRankH = snap.TIntFltH()
+		snap.GetPageRank(G, PRankH, 1e-2, 50)
+	return PRankH[n1] + PRankH[n2]
+
+
+def get_ev_centr_sum(G, n1, n2):
+	global NIdEigenH
+	if NIdEigenH is None: 
+		print 'Initializing EV Centrality...'
+		NIdEigenH = snap.TIntFltH()
+		snap.GetEigenVectorCentr(G, NIdEigenH, 1e-2, 50)
+	return NIdEigenH[n1] + NIdEigenH[n2]
+
+def std_nbr_degree_sum(G, n1, n2, directed=False):
+	return std_nbr_degree(G, n1) + std_nbr_degree(G, n2)
+
+def mean_nbr_deg_sum(G, n1, n2, directed=False):
+	return mean_nbr_degree(G, n1) + mean_nbr_degree(G, n2)
+	
+def adamic_adar_2(G, n1, n2, directed=False):
+	deleted = False
+	if G.IsEdge(n1, n2):
+		G.DelEdge(n1, n2)
+		deleted = True
+	n1_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n1, 1, n1_neighbors, directed)
+	n2_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n2, 2, n2_neighbors, directed)
+	common_neighbors = set(n1_neighbors) & set(n2_neighbors)
+
+	aa = 0.0
+	for n in common_neighbors:
+		aa += 1.0/math.log(G.GetNI(n).GetDeg())
+
+	if deleted: G.AddEdge(n1, n2)
+	return aa
+
+
+def common_neighbors_2(G, n1, n2, directed=False):
+	deleted = False
+	if G.IsEdge(n1, n2):
+		G.DelEdge(n1, n2)
+		deleted = True
+	n1_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n1, 1, n1_neighbors, directed)
+	n2_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n2, 2, n2_neighbors, directed)
+	common_neighbors = set(n1_neighbors) & set(n2_neighbors)	
+	if deleted: G.AddEdge(n1, n2)
+	return len(common_neighbors)
+
+def jaccard_2(G, n1, n2, directed=False):
+	deleted = False
+	if G.IsEdge(n1, n2):
+		G.DelEdge(n1, n2)
+		deleted = True
+	n1_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n1, 1, n1_neighbors, directed)
+	n2_neighbors = snap.TIntV()
+	snap.GetNodesAtHop(G, n2, 2, n2_neighbors, directed)
+	total_neighbors = set(n1_neighbors) | set(n2_neighbors)	
+	common_neighbors = set(n1_neighbors) & set(n2_neighbors)
+	if len(total_neighbors) == 0: result = 0.0	
+	else: result = float(len(common_neighbors))/float(len(total_neighbors))
+	if deleted: G.AddEdge(n1, n2)
+	return result
 
 def get_2_hops(G, n1, n2, directed=False):
 	deleted = False
@@ -293,15 +367,24 @@ def friends_measure(G, n1, n2, directed=False):
 #################################
 
 def get_in_degree(G, n):
-	# InDegV = snap.TIntPrV()
-	# snap.GetNodeInDegV(Graph, InDegV)
-	# for item in InDegV:
-	# 	if item.GetVal1() == n: return item.GetVal2()
 	return G.GetNI(n).GetInDeg()
 
 def get_out_degree(G, n):
 	return G.GetNI(n).GetOutDeg()
 
+def mean_nbr_degree(G, n):
+	neighbors = G.GetNI(n).GetOutEdges()
+	all_degs = []
+	for nbr_id in neighbors:
+		all_degs.append(G.GetNI(nbr_id).GetOutDeg())
+	return sum(all_degs)/float(len(all_degs))
+
+def std_nbr_degree(G, n):
+	neighbors = G.GetNI(n).GetOutEdges()
+	all_degs = []
+	for nbr_id in neighbors:
+		all_degs.append(G.GetNI(nbr_id).GetOutDeg())
+	return np.std(all_degs)
 
 #################################
 ####NODE CENTRALITY MEASURES#####
@@ -443,8 +526,8 @@ def get_coeff_sum(G, n1, n2):
 	return get_clustering_coefficient(G, n1) + \
 			get_clustering_coefficient(G, n2)
 
-def get_page_rank_sum(G, n1, n2):
-	return get_page_rank(G, n1) + get_page_rank(G, n2)
+# def get_page_rank_sum(G, n1, n2):
+	# return get_page_rank(G, n1) + get_page_rank(G, n2)
 
 def get_hubs_sum(G, n1, n2):
 	return get_HITS_scores(G, n1)[0] + get_HITS_scores(G, n2)[0]
