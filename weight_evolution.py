@@ -20,7 +20,7 @@ def get_w(train_features, train_labels):
 
 	num_features = training_set[0].size
 
-	w = numpy.random.rand(num_features)
+	w = numpy.random.uniform(-1,1,num_features)
 	for i in range(NUM_ITERS):
 		print w
 		candidates = generate_candidates(w)
@@ -35,7 +35,7 @@ def generate_candidates(w):
 	for i in range(NUM_CANDIDATES):
 		c = numpy.zeros(w.size)
 		for i in range(w.size):
-			c[i] = w[i] + random.uniform(-1,1)
+			c[i] = w[i] + numpy.random.normal()
 		candidates.append(c)
 	return candidates
 
@@ -76,7 +76,7 @@ def test_w(test_features, test_labels, w):
 	return accuracy / float(len(labels))
 
 def evolve_weights():
-	w = get_w("sample_train.txt", "sample_labels.txt")
+	w = get_w("train_features.txt", "train_labels.txt")
 	return test_w("test_features.txt", "test_labels.txt", w)
 
 evolve_weights()
