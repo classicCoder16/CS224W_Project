@@ -1,8 +1,8 @@
 import random
 import numpy
 
-NUM_ITERS = 10
-NUM_CANDIDATES = 5
+NUM_ITERS = 300
+NUM_CANDIDATES = 100
 
 def get_w(train_features, train_labels):
 	labels = []
@@ -14,15 +14,13 @@ def get_w(train_features, train_labels):
 	training_set = []
 	f = open(train_features, "r")
 	for line in f:
-		split_line = line.split(",")
-		training_set.append(numpy.array([float(n.strip()) for n in split_line]))
+		training_set.append(numpy.array([float(n) for n in line.split(",")]))
 	f.close()
 
 	num_features = training_set[0].size
 
 	w = numpy.random.uniform(-1,1,num_features)
 	for i in range(NUM_ITERS):
-		print w
 		candidates = generate_candidates(w)
 		accuracies = get_accuracies(candidates, training_set, labels)
 		accuracy = -numpy.inf
