@@ -1,3 +1,4 @@
+import sklearn.preprocessing
 import sklearn.metrics
 import numpy as np
 import snap
@@ -48,8 +49,8 @@ def get_all_features(feature_funcs, train_graph, train_examples, test_examples):
 		print 'Extracting features with', func
 		all_train_features.append(get_features(train_graph, train_examples, func))
 		all_test_features.append(get_features(train_graph, test_examples, func))
-	all_train_features = np.array(all_train_features).T
-	all_test_features = np.array(all_test_features).T
+	all_train_features = sklearn.preprocessing.scale(np.array(all_train_features).T)
+	all_test_features = sklearn.preprocessing.scale(np.array(all_test_features).T)
 	return all_train_features, all_test_features
 
 
@@ -110,20 +111,20 @@ def main(root):
 	train_examples, train_labels = extract_examples(train_graph, 10000, 10000)
 	validate_train(train_examples, train_labels, train_graph)
 
+	# Get test examples
 	test_examples, test_labels = extract_test_examples(train_graph, test_graph, \
 														train_examples, 5000, 5000)
 	validate_test(test_examples, test_labels, train_examples, test_graph, train_graph)
 
 	feature_funcs = [get_graph_distance, get_common_neighbors, jaccard_coefficient, adamic_adar,\
 						preferential_attachment, get_degree_sum, get_coeff_sum, get_2_hops]
+
 	for func in feature_funcs:
 		print 'Testing', func
 		test_func(test_examples, test_labels, train_graph, func, 5000)
-	all_train_features, all_test_features = get_all_features(feature_funcs, max_scc, train_examples, test_examples)
+	
+	all_train_features, all_test_features = get_all_features(feature_funcs, train_graph, train_examples, test_examples)
 	test_classifiers(all_train_features, train_labels, all_test_features, test_labels)
-
-
-
 
 
 if __name__=='__main__':
