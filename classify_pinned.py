@@ -143,11 +143,11 @@ def main(input_train, input_test):
 	validate_test(test_examples, test_labels, train_examples, test_pgraph, max_scc, test_graph_obj.board_node_ids)
 
 	# Define all feature functions we will be using
-	# feature_funcs = [get_ev_centr_sum, get_page_rank_sum, preferential_attachment, \
-	# 				get_2_hops, get_degree_sum, std_nbr_degree_sum, \
-	# 				mean_nbr_deg_sum, adamic_adar_2, common_neighbors_2, \
-	# 				jaccard_2]
-	feature_funcs = [jaccard_2, preferential_attachment, get_degree_sum]
+	feature_funcs = [get_ev_centr_sum, get_page_rank_sum, preferential_attachment, \
+					get_2_hops, get_degree_sum, std_nbr_degree_sum, \
+					mean_nbr_deg_sum, adamic_adar_2, common_neighbors_2, \
+					jaccard_2]
+	# feature_funcs = [jaccard_2, preferential_attachment, get_degree_sum]
 
 	# # Test each feature function on its own
 	print 'Test Examples shape:', len(test_examples)
