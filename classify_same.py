@@ -11,14 +11,16 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
+from weight_evolution import EvolModel
 
 
 def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 	knn = KNeighborsClassifier()
 	logistic = LogisticRegression()
 	rf = RandomForestClassifier(n_estimators=100)
-	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50))
-	models = [knn, logistic, rf, my_nn]
+	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50, 50))
+	bliss_model = EvolModel()
+	models = [bliss_model, knn, logistic, rf, my_nn]
 	for model in models:
 		print ''
 		print 'Training model', model
@@ -117,7 +119,7 @@ def main(root):
 	validate_test(test_examples, test_labels, train_examples, test_graph, train_graph)
 
 	feature_funcs = [get_graph_distance, get_common_neighbors, jaccard_coefficient, adamic_adar,\
-						preferential_attachment, get_degree_sum, get_coeff_sum, get_2_hops]
+						preferential_attachment, get_degree_sum, get_coeff_sum, get_2_hops, get_coeff_sum]
 
 	for func in feature_funcs:
 		print 'Testing', func

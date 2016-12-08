@@ -11,6 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from weight_evolution import EvolModel
 
 def print_metrics(gt, pred):
 	print 'Accuracy:', sklearn.metrics.accuracy_score(gt, pred)
@@ -22,16 +23,23 @@ def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 	knn = KNeighborsClassifier()
 	logistic = LogisticRegression()
 	rf = RandomForestClassifier(n_estimators=100)
-	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50))
-	models = [knn, logistic, rf, my_nn]
+	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50, 50))
+	bliss_model = EvolModel()
+	models = [bliss_model, knn, logistic, rf, my_nn]
 	for model in models:
 		print 'Training model', model
 		model.fit(train_examples, train_labels)
 		preds = model.predict(test_examples)
 		gt = [elem for elem in test_labels]
 		print ''
-		print 'Evaluating ...:'
+		print 'Evaluating Testing Set:'
 		print_metrics(gt, preds)
+
+		print ''
+		print 'Evaluating Training Set:'
+		preds_train = model.predict(train_examples)
+		gt_train = [elem for elem in train_labels]
+		print_metrics(gt_train, preds_train)
 
 
 def test_proximity(feature_funcs, test_examples, test_labels, max_scc, num_pos):
@@ -47,8 +55,8 @@ def get_all_features(feature_funcs, max_scc, train_examples, test_examples):
 		all_train_features.append(get_features(max_scc, train_examples, func))
 		all_test_features.append(get_features(max_scc, test_examples, func))
 	# Transpose since sklearn takes nsamples, nfeatures shape
-	all_train_features = sklearn.preprocessing.scale(np.array(all_train_features).T)
-	all_test_features = sklearn.preprocessing.scale(np.array(all_test_features).T)
+	all_train_features = np.array(all_train_features).T
+	all_test_features = np.array(all_test_features).T
 	return all_train_features, all_test_features
 
 def get_features(max_scc, examples, func):
@@ -146,10 +154,10 @@ def main(input_train, input_test):
 	validate_test(test_examples, test_labels, train_examples, test_pgraph, max_scc, test_graph_obj.board_node_ids)
 
 	# Define all feature functions we will be using
-	feature_funcs = [get_ev_centr_sum, get_page_rank_sum, preferential_attachment, \
-					get_2_hops, get_degree_sum, std_nbr_degree_sum, \
-					mean_nbr_deg_sum, adamic_adar_2, common_neighbors_2, \
-					jaccard_2]
+	feature_funcs = [get_graph_distance, get_ev_centr_sum, get_page_rank_sum, \
+					preferential_attachment, get_2_hops, get_degree_sum, \
+					std_nbr_degree_sum, mean_nbr_deg_sum, adamic_adar_2, \
+					common_neighbors_2]
 	# feature_funcs = [preferential_attachment]
 
 	# # Test each feature function on its own
@@ -158,7 +166,13 @@ def main(input_train, input_test):
 	# # Convert our training examples and testing examples to feature
 	# # vectors
 	all_train_features, all_test_features = get_all_features(feature_funcs, max_scc, train_examples, test_examples)
-	
+	print 'Saving features to file...'
+	np.save('train_fol_features', all_train_features)
+	np.save('test_fol_features', all_test_features)
+	np.save('train_fol_examples', zip(train_examples, train_labels))
+	np.save('test_fol_examples', zip(test_examples, test_labels))
+	all_train_features = sklearn.preprocessing.scale(all_train_features)
+	all_test_features = sklearn.preprocessing.scale(all_test_features)
 	# # Test our classifiers over these features
 	test_classifiers(all_train_features, train_labels, all_test_features, test_labels)
 
