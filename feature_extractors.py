@@ -10,18 +10,18 @@ PRankH = None
 ######LINK PREDICTION MEASURES#######
 #####################################
 
-def get_page_rank_sum(G, n1, n2):
+def get_page_rank_sum(G, n1, n2, reset=False):
 	global PRankH
-	if PRankH is None:
+	if reset or PRankH is None:
 		print 'Initializing Page Rank'
 		PRankH = snap.TIntFltH()
 		snap.GetPageRank(G, PRankH, 1e-2, 50)
 	return PRankH[n1] + PRankH[n2]
 
 
-def get_ev_centr_sum(G, n1, n2):
+def get_ev_centr_sum(G, n1, n2, reset=False):
 	global NIdEigenH
-	if NIdEigenH is None: 
+	if reset or NIdEigenH is None: 
 		print 'Initializing EV Centrality...'
 		NIdEigenH = snap.TIntFltH()
 		snap.GetEigenVectorCentr(G, NIdEigenH, 1e-2, 50)
@@ -377,6 +377,7 @@ def mean_nbr_degree(G, n):
 	all_degs = []
 	for nbr_id in neighbors:
 		all_degs.append(G.GetNI(nbr_id).GetOutDeg())
+	if len(all_degs) == 0: return 0
 	return sum(all_degs)/float(len(all_degs))
 
 def std_nbr_degree(G, n):
@@ -384,6 +385,7 @@ def std_nbr_degree(G, n):
 	all_degs = []
 	for nbr_id in neighbors:
 		all_degs.append(G.GetNI(nbr_id).GetOutDeg())
+	if len(all_degs) == 0: return 0
 	return np.std(all_degs)
 
 #################################

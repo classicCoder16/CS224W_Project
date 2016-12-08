@@ -12,6 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from weight_evolution import EvolModel
 
 def print_metrics(gt, pred):
 	print 'Accuracy:', sklearn.metrics.accuracy_score(gt, pred)
@@ -46,16 +47,23 @@ def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 	knn = KNeighborsClassifier()
 	logistic = LogisticRegression()
 	rf = RandomForestClassifier(n_estimators=100)
-	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50))
-	models = [knn, logistic, rf, my_nn]
+	my_nn = MLPClassifier(hidden_layer_sizes = (100, 50, 50))
+	bliss_model = EvolModel()
+	models = [knn, logistic, rf, my_nn, bliss_model]
 	for model in models:
 		print 'Training model', model
 		model.fit(train_examples, train_labels)
 		preds = model.predict(test_examples)
 		gt = [elem for elem in test_labels]
 		print ''
-		print 'Evaluating ...:'
+		print 'Evaluating Testing Set:'
 		print_metrics(gt, preds)
+
+		print ''
+		print 'Evaluating Training Set:'
+		preds_train = model.predict(train_examples)
+		gt_train = [elem for elem in train_labels]
+		print_metrics(gt_train, preds_train)
 
 
 def get_train_features(train_examples, graph, interval_edges, feature_funcs):
@@ -114,7 +122,7 @@ def get_test_features(test_examples, graph, interval_edges, feature_funcs):
 	return final_feats
 
 
-def get_train_set(train_pgraph, interval_edges, board_ids, attributes, num_pos=1000, num_neg=1000):
+def get_train_set(train_pgraph, interval_edges, board_ids, attributes, num_pos=10000, num_neg=10000):
 	last_interval = interval_edges[-1]
 	all_pinned_edges = []
 	for src_id, dst_id in last_interval:
@@ -171,6 +179,9 @@ def get_intervals(min_time, max_time, graph, attributes, num_intervals, board_id
 			continue
 		time_val = datetime.datetime.fromtimestamp(time_val)
 		index = int(math.ceil((time_val - min_time).total_seconds()/time_delta.total_seconds()) - 1)
+		if index == (num_intervals - 1):
+			print 'Why are we here?'
+		index = min(index, num_intervals - 1)
 		int_edges[index].append((src_id, dst_id))
 	for interval in int_edges:
 		print len(interval)
@@ -206,14 +217,21 @@ def main(input_train, input_test, num_intervals):
 	test_pgraph = test_graph_obj.pgraph
 	print 'Getting testing examples/labels'
 	test_examples, test_labels = get_pin_tst_ex(train_pgraph, test_pgraph, \
-								train_examples, 100, 100, test_graph_obj.board_node_ids)
+								train_examples, 5000, 5000, test_graph_obj.board_node_ids)
 
-	feature_funcs = [adamic_adar_2, get_degree_sum]
+	feature_funcs = [get_graph_distance, get_ev_centr_sum, get_page_rank_sum, \
+					preferential_attachment, get_2_hops, get_degree_sum, \
+					std_nbr_degree_sum, mean_nbr_deg_sum, adamic_adar_2, \
+					common_neighbors_2]
 	print 'Extracting Training features...'
 	train_features = get_train_features(train_examples, train_pgraph, interval_edges, feature_funcs)
+	np.save('train_temp_fol_features', train_features)
+	np.save('train_temp_fol_examples', zip(train_examples, train_labels))
 	train_features = sklearn.preprocessing.scale(train_features)	
 	print 'Extracting Testing features...'
 	test_features = get_test_features(test_examples, train_pgraph, interval_edges, feature_funcs)
+	np.save('test_temp_fol_features', test_features)
+	np.save('test_temp_fol_examples', zip(test_examples, test_labels))
 	test_features = sklearn.preprocessing.scale(test_features)	
 
 	test_classifiers(train_features, train_labels, test_features, test_labels)
