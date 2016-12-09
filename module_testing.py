@@ -23,7 +23,7 @@ def test_graph_creation(arguments):
 	print arguments
 	print 'Testing train_graph.py...'
 	time_lbound = datetime.datetime(2013, 1, 1)
-	time_ubound = datetime.datetime(2013, 6, 30)
+	time_ubound = datetime.datetime(2013, 4, 30)
 	train_graph_obj = Train_Graph(time_lbound=time_lbound, \
 								  time_ubound=time_ubound, \
 								  src_path=arguments[0])
@@ -36,8 +36,8 @@ def test_graph_creation(arguments):
 
 def test_testing_graph_creation(arguments):
 	# Arguments are data location, training graph file root, output file root
-	time_lbound = datetime.datetime(2013, 3, 1)
-	time_ubound = datetime.datetime(2013, 5, 31)
+	time_lbound = datetime.datetime(2013, 5, 1)
+	time_ubound = datetime.datetime(2013, 6, 30)
 	print 'Testing test_graph.py...'
 	test_graph_obj = Test_Graph(time_lbound=time_lbound, \
 								  time_ubound=time_ubound, \
@@ -71,7 +71,7 @@ def test_feature_extraction(arguments):
 
 if __name__ == '__main__':
 	arguments = sys.argv[1:]
-	# test_graph_creation(arguments)
+	#test_graph_creation(arguments)
 	# test_graph_loading(arguments)
-	# test_testing_graph_creation(arguments)
-	test_feature_extraction(arguments)
+	test_testing_graph_creation(arguments)
+	# test_feature_extraction(arguments)

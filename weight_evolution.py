@@ -5,34 +5,39 @@ import numpy
 class EvolModel:
 
 	def __init__(self):
-		self.NUM_ITERS = 300
-		self.NUM_CANDIDATES = 100
+		self.NUM_ITERS = 500
+		self.NUM_CANDIDATES = 500
 		self.w = None
 
 	def fit(self, train_features, train_labels):
 		num_features = train_features.shape[1]
-
-		w = numpy.random.uniform(-1,1,num_features)
+		train_labels = numpy.array(train_labels)
+		w = numpy.random.uniform(-10,10,num_features)
+		prev_acc = 0.0
 		for i in range(self.NUM_ITERS):
+			if (i%100) == 0: print i
 			candidates = self.generate_candidates(w)
 			accuracies = self.get_accuracies(candidates, train_features, train_labels)
 			index, val = max(enumerate(accuracies), key=lambda x:x[1])
-			w = candidates[index]
+			if val >= prev_acc:
+				w = candidates[index]
+				prev_acc = val
 		self.w = w
 
 	def generate_candidates(self, w):
 		candidates = []
-		for i in range(self.NUM_CANDIDATES):
-			c = numpy.random.normal(size=w.size)
-			candidates.append(c + w)
+		# for i in range(self.NUM_CANDIDATES):
+		c = numpy.random.normal(size=[self.NUM_CANDIDATES, w.size])
+		candidates = c + w
 		return candidates
 
 	def get_accuracies(self, candidates, train_features, labels):
-		accuracies = []
-		for c in candidates:
-			preds = numpy.sign(numpy.dot(train_features, c))
-			accuracy = sum(preds == labels)
-			accuracies.append(accuracy)
+		# accuracies = []
+		# for i, c in enumerate(candidates):
+		# 	print i
+		preds = numpy.sign(numpy.dot(train_features, candidates.T))
+		matches = preds.T*labels
+		accuracies = numpy.sum(matches > 0, axis = 1).flatten().tolist()
 		return accuracies
 
 

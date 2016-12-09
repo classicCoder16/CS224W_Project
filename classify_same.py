@@ -44,6 +44,13 @@ def test_classifiers(train_examples, train_labels, test_examples, test_labels):
 		print ''
 
 
+def get_features(max_scc, examples, func):
+	all_features = []
+	for ex in examples:
+		result = func(max_scc, ex[0], ex[1])
+		all_features.append(result)
+	return all_features
+
 def get_all_features(feature_funcs, train_graph, train_examples, test_examples):
 	all_train_features = []
 	all_test_features = []
@@ -59,7 +66,7 @@ def get_all_features(feature_funcs, train_graph, train_examples, test_examples):
 def test_func(test_examples, test_labels, train_graph, func, num_pos):
 	original_preds = []
 	for i, cand in enumerate(test_examples):
-		if (i%100 == 0): print i
+		if (i%500 == 0): print i
 		score = func(train_graph, cand[0], cand[1])
 		original_preds.append(score)
 	preds = sorted(zip(original_preds, test_labels), reverse=True)
@@ -100,37 +107,34 @@ def validate_test(test_examples, test_labels, train_examples, test_graph, train_
 		i += 1
 
 
-def main(root):
-	# Get the filenames
-	train_file = root + '_train.txt'
-	test_file = root + '_test.txt'
+def main(train_file, test_file):
 
 	# Load edges from files
 	train_graph = snap.LoadEdgeList(snap.PUNGraph, train_file, 0, 1)
 	test_graph = snap.LoadEdgeList(snap.PUNGraph, test_file, 0, 1)
 
 	# Sample training examples
-	train_examples, train_labels = extract_examples(train_graph, 10000, 10000)
+	train_examples, train_labels = extract_examples(train_graph, 5000, 5000)
 	validate_train(train_examples, train_labels, train_graph)
 
 	# Get test examples
 	test_examples, test_labels = extract_test_examples(train_graph, test_graph, \
-														train_examples, 5000, 5000)
+														train_examples, 2500, 2500)
 	validate_test(test_examples, test_labels, train_examples, test_graph, train_graph)
 
 	feature_funcs = [get_graph_distance, get_common_neighbors, jaccard_coefficient, adamic_adar,\
-						preferential_attachment, get_degree_sum, get_coeff_sum, get_2_hops, get_coeff_sum]
+						preferential_attachment, get_degree_sum, get_coeff_sum, get_2_hops, \
+						get_page_rank_sum, mean_nbr_deg_sum]
 
 	for func in feature_funcs:
 		print 'Testing', func
-		test_func(test_examples, test_labels, train_graph, func, 5000)
+		test_func(test_examples, test_labels, train_graph, func, 2500)
 	
 	all_train_features, all_test_features = get_all_features(feature_funcs, train_graph, train_examples, test_examples)
 	test_classifiers(all_train_features, train_labels, all_test_features, test_labels)
 
 
 if __name__=='__main__':
-	types = ['pins_small', 'user_small', 'user_board_small']
-	for root in types:
-		print 'Evaluating', root
-		main(root)
+	train_file = sys.argv[1]
+	test_file = sys.argv[2]
+	main(train_file, test_file)

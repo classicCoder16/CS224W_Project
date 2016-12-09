@@ -161,16 +161,19 @@ def main(input_train, input_test):
 	# feature_funcs = [preferential_attachment]
 
 	# # Test each feature function on its own
-	test_proximity(feature_funcs, test_examples, test_labels, max_scc, 5000)
+	# test_proximity(feature_funcs, test_examples, test_labels, max_scc, 5000)
 
 	# # Convert our training examples and testing examples to feature
 	# # vectors
 	all_train_features, all_test_features = get_all_features(feature_funcs, max_scc, train_examples, test_examples)
 	print 'Saving features to file...'
-	np.save('train_fol_features', all_train_features)
-	np.save('test_fol_features', all_test_features)
-	np.save('train_fol_examples', zip(train_examples, train_labels))
-	np.save('test_fol_examples', zip(test_examples, test_labels))
+	try:
+		np.save('train_fol_features', all_train_features)
+		np.save('test_fol_features', all_test_features)
+		np.save('train_fol_examples', zip(train_examples, train_labels))
+		np.save('test_fol_examples', zip(test_examples, test_labels))
+	except Exception as e:
+		print str(e)
 	all_train_features = sklearn.preprocessing.scale(all_train_features)
 	all_test_features = sklearn.preprocessing.scale(all_test_features)
 	# # Test our classifiers over these features

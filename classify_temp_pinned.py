@@ -34,6 +34,7 @@ def add_edges_from_int(graph, interval_edges, intervals):
 def get_feat_vals(graph, examples, feature_funcs):
 	result = np.zeros([len(examples), len(feature_funcs)])
 	for i, elem in enumerate(examples):
+		if (i % 500) == 0: print i
 		src_id, dst_id = elem
 		for j, func in enumerate(feature_funcs):
 			if i == 0 and (func == get_ev_centr_sum or func == get_page_rank_sum):
@@ -90,7 +91,6 @@ def get_train_features(train_examples, graph, interval_edges, feature_funcs):
 		old_vals = new_vals
 	add_edges_from_int(graph, interval_edges, [num_intervals - 1])
 	print 'Nodes, edges afterwards:', graph.GetNodes(), graph.GetEdges()
-	print final_feats
 	return final_feats
 
 def get_test_features(test_examples, graph, interval_edges, feature_funcs):
@@ -160,6 +160,7 @@ the edges formed during that interval.
 def get_intervals(min_time, max_time, graph, attributes, num_intervals, board_ids):
 	int_edges = [[] for i in range(num_intervals)]
 	time_delta = (max_time - min_time)/num_intervals
+	print time_delta
 	all_edges = [(edge.GetSrcNId(), edge.GetDstNId()) for edge in graph.Edges()]
 	for src_id, dst_id in all_edges:
 		if src_id < board_ids[0] or src_id > board_ids[1]:
@@ -177,8 +178,11 @@ def get_intervals(min_time, max_time, graph, attributes, num_intervals, board_id
 			continue
 		time_val = datetime.datetime.fromtimestamp(time_val)
 		index = int(math.ceil((time_val - min_time).total_seconds()/time_delta.total_seconds()) - 1)
-		if index == (num_intervals - 1):
-			print 'Why are we here?'
+		# if index == num_intervals:
+		# 	print 'Timeval', time_val
+		# 	print 'Numer:', (time_val - min_time).total_seconds()
+		# 	print 'Denom:', time_delta.total_seconds()
+		# 	print ''
 		index = min(num_intervals - 1, index)
 		int_edges[index].append((src_id, dst_id))
 	for interval in int_edges:
@@ -208,14 +212,14 @@ def main(input_train, input_test, num_intervals):
 	# Extract positive and negative training examples in the last frame
 	print 'Getting training examples/labels'
 	train_examples, train_labels = get_train_set(train_pgraph, interval_edges, \
-									train_graph_obj.board_node_ids, num_pos=10, num_neg=10)
+									train_graph_obj.board_node_ids, num_pos=5000, num_neg=5000)
 
 	# Contruct our testing set
 	test_graph_obj = Test_Graph(graph_file_root=input_test)
 	test_pgraph = test_graph_obj.pgraph
 	print 'Getting testing examples/labels'
 	test_examples, test_labels = get_pin_tst_ex(train_pgraph, test_pgraph, \
-								train_examples, 10, 10, test_graph_obj.board_node_ids)
+								train_examples, 2500, 2500, test_graph_obj.board_node_ids)
 
 	feature_funcs = [get_graph_distance, get_ev_centr_sum, get_page_rank_sum, \
 					preferential_attachment, get_2_hops, get_degree_sum, \
@@ -223,14 +227,20 @@ def main(input_train, input_test, num_intervals):
 					common_neighbors_2]
 	print 'Extracting Training features...'
 	train_features = get_train_features(train_examples, train_pgraph, interval_edges, feature_funcs)
-	np.save('train_temp_pin_features', train_features)
-	np.save('train_temp_pin_examples', zip(train_examples, train_labels))
+	try:
+		np.save('train_temp_pin_features', train_features)
+		np.save('train_temp_pin_examples', zip(train_examples, train_labels))
+	except Exception as e:
+		print str(e)
 	train_features = sklearn.preprocessing.scale(train_features)	
 	
 	print 'Extracting Testing features...'
 	test_features = get_test_features(test_examples, train_pgraph, interval_edges, feature_funcs)
-	np.save('test_temp_pin_features', test_features)
-	np.save('test_temp_pin_examples', zip(test_examples, test_labels))
+	try:
+		np.save('test_temp_pin_features', test_features)
+		np.save('test_temp_pin_examples', zip(test_examples, test_labels))
+	except Exception as e:
+		print str(e)
 	test_features = sklearn.preprocessing.scale(test_features)	
 
 	test_classifiers(train_features, train_labels, test_features, test_labels)
