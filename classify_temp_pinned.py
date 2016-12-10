@@ -228,8 +228,8 @@ def main(input_train, input_test, num_intervals):
 	print 'Extracting Training features...'
 	train_features = get_train_features(train_examples, train_pgraph, interval_edges, feature_funcs)
 	try:
-		np.save('train_temp_pin_features', train_features)
-		np.save('train_temp_pin_examples', zip(train_examples, train_labels))
+		np.save('train_temp_pin_features_3', train_features)
+		np.save('train_temp_pin_examples_3', zip(train_examples, train_labels))
 	except Exception as e:
 		print str(e)
 	train_features = sklearn.preprocessing.scale(train_features)	
@@ -237,8 +237,8 @@ def main(input_train, input_test, num_intervals):
 	print 'Extracting Testing features...'
 	test_features = get_test_features(test_examples, train_pgraph, interval_edges, feature_funcs)
 	try:
-		np.save('test_temp_pin_features', test_features)
-		np.save('test_temp_pin_examples', zip(test_examples, test_labels))
+		np.save('test_temp_pin_features_3', test_features)
+		np.save('test_temp_pin_examples_3', zip(test_examples, test_labels))
 	except Exception as e:
 		print str(e)
 	test_features = sklearn.preprocessing.scale(test_features)	

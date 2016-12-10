@@ -127,13 +127,13 @@ def validate_test(test_examples, test_labels, train_examples, test_graph, train_
 		i += 1
 
 
-def main(input_train, input_test):
+def main(input_train, input_test, output_root):
 	print 'Extracting training examples.'
 	train_graph_obj = Train_Graph(graph_file_root=input_train)
 	train_pgraph = train_graph_obj.pgraph
 	max_scc = train_pgraph
 	board_ids = train_graph_obj.board_node_ids
-	train_examples, train_labels = get_pin_tr_ex(max_scc, 10000, 10000, board_ids)
+	train_examples, train_labels = get_pin_tr_ex(max_scc, 5000, 5000, board_ids)
 	validate_train(train_examples, train_labels, max_scc, board_ids)
 
 	'''
@@ -145,7 +145,7 @@ def main(input_train, input_test):
 	test_graph_obj = Test_Graph(graph_file_root=input_test)
 	test_pgraph = test_graph_obj.pgraph
 	test_examples, test_labels = get_pin_tst_ex(max_scc, test_pgraph, \
-								train_examples, 5000, 5000, test_graph_obj.board_node_ids)
+								train_examples, 2500, 2500, test_graph_obj.board_node_ids)
 
 	# Make sure test set satisfies criteria
 	validate_test(test_examples, test_labels, train_examples, test_pgraph, max_scc, test_graph_obj.board_node_ids)
@@ -166,10 +166,10 @@ def main(input_train, input_test):
 	all_train_features, all_test_features = get_all_features(feature_funcs, max_scc, train_examples, test_examples)
 	print 'Saving features to file...'
 	try:
-		np.save('train_pin_features', all_train_features)
-		np.save('test_pin_features', all_test_features)
-		np.save('train_pin_examples', zip(train_examples, train_labels))
-		np.save('test_pin_examples', zip(test_examples, test_labels))
+		np.save('train_' + output_root + '_pin_features', all_train_features)
+		np.save('test_' + output_root + '_pin_features', all_test_features)
+		np.save('train_' + output_root + '_pin_examples', zip(train_examples, train_labels))
+		np.save('test_' + output_root + '_pin_examples', zip(test_examples, test_labels))
 	except Exception as e:
 		print str(e)
 	all_train_features = sklearn.preprocessing.scale(all_train_features)
@@ -183,5 +183,6 @@ def main(input_train, input_test):
 if __name__=='__main__':
 	input_train = sys.argv[1]
 	input_test = sys.argv[2]
-	main(input_train, input_test)
+	output_root = sys.argv[3]
+	main(input_train, input_test, output_root)
 

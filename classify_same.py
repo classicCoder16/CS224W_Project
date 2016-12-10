@@ -107,17 +107,20 @@ def validate_test(test_examples, test_labels, train_examples, test_graph, train_
 		i += 1
 
 
-def main(train_file, test_file):
+def main(train_file, test_file, output_root):
 
 	# Load edges from files
+	print 'Loading from files...'
 	train_graph = snap.LoadEdgeList(snap.PUNGraph, train_file, 0, 1)
 	test_graph = snap.LoadEdgeList(snap.PUNGraph, test_file, 0, 1)
 
 	# Sample training examples
+	print 'Extracting training examples'
 	train_examples, train_labels = extract_examples(train_graph, 5000, 5000)
 	validate_train(train_examples, train_labels, train_graph)
 
 	# Get test examples
+	print 'extracting testing esxamples'
 	test_examples, test_labels = extract_test_examples(train_graph, test_graph, \
 														train_examples, 2500, 2500)
 	validate_test(test_examples, test_labels, train_examples, test_graph, train_graph)
@@ -131,10 +134,18 @@ def main(train_file, test_file):
 		test_func(test_examples, test_labels, train_graph, func, 2500)
 	
 	all_train_features, all_test_features = get_all_features(feature_funcs, train_graph, train_examples, test_examples)
+	try:
+		np.save('train_' + output_root + '_features', all_train_features)
+		np.save('test_' + output_root + '_features', all_test_features)
+		np.save('train_' + output_root + '_examples', zip(train_examples, train_labels))
+		np.save('test_' + output_root + '_examples', zip(test_examples, test_labels))
+	except Exception as e:
+		print str(e)
 	test_classifiers(all_train_features, train_labels, all_test_features, test_labels)
 
 
 if __name__=='__main__':
 	train_file = sys.argv[1]
 	test_file = sys.argv[2]
-	main(train_file, test_file)
+	output_root = sys.argv[3]
+	main(train_file, test_file, output_root)
