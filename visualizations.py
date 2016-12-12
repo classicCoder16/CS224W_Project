@@ -1,6 +1,8 @@
 import numpy
 from sklearn.ensemble import RandomForestClassifier
 from weight_evolution import EvolModel
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
 import pylab
 import collections
 import math
@@ -8,6 +10,7 @@ import datetime
 
 def shortest_paths_misclassified(train_features_file, train_example_file, test_features_file, test_example_file, etype):
 	rf = RandomForestClassifier(n_estimators=100)
+	#rf = MLPClassifier(hidden_layer_sizes = (100, 50, 50))
 
 	train_examples = numpy.load(train_features_file)
 
@@ -102,6 +105,7 @@ shortest_paths_misclassified("train_four_fol_features.npy", "train_four_fol_exam
 
 def false_negative_timestamps(train_features_file, train_example_file, test_features_file, test_example_file, attribute_file, etype):
 	rf = RandomForestClassifier(n_estimators=100)
+	#rf = MLPClassifier(hidden_layer_sizes = (100, 50, 50))
 
 	attr = numpy.load(attribute_file).item()
 
@@ -161,6 +165,8 @@ def evolution_heat_map(train_features_file, train_example_file, test_features_fi
 	print 'Training model', bliss
 	bliss.fit(train_examples, train_labels)
 	w = bliss.w
+
+	w = numpy.array([abs(i) for i in w])
 
 	mat_len = w.size
 	w = numpy.append(w, w).reshape(2, mat_len)
